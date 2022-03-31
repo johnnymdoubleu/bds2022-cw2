@@ -14,18 +14,17 @@ library(data.table)
 library(glmnet)
 library(MASS)
 library(knitr)
+library(kableExtra)
 library(pROC)
 ```
 
 ## Problem 1 (27 points)
 
-File wdbc2.csv (available from the accompanying zip folder on Learn) refers to a study of breast cancer where the outcome of interest is the type of the tumour (benign or malignant, recorded in column “diagnosis”). The study collected 30 imaging biomarkers on 569 patients.
-
+File wdbc2.csv (available from the accompanying zip folder on Learn) refers to a study of breast cancer where the outcome of interest is the type of the tumour (benign or malignant, recorded in column "diagnosis"). The study collected 30 imaging biomarkers on 569 patients.
 
 ### Problem 1.a (7 points)
 
-Using package caret, create a data partition so that the training set contains 70% of the observations (set the random seed to 984065 beforehand). Fit both a ridge regression model and a lasso model which uses cross-validation on the training set to diagnose the type of tumour from the 30 biomarkers. Then use a plot to help identify the penalty parameter $\lambda$ that maximizes the AUC.
-Note: There is no need to use the prepare.glmnet() function from lab 4, using as.matrix() with the required columns is sufficient.
+Using package caret, create a data partition so that the training set contains 70% of the observations (set the random seed to 984065 beforehand). Fit both a ridge regression model and a lasso model which uses cross-validation on the training set to diagnose the type of tumour from the 30 biomarkers. Then use a plot to help identify the penalty parameter $\lambda$ that maximizes the AUC. Note: There is no need to use the prepare.glmnet() function from lab 4, using as.matrix() with the required columns is sufficient.
 
 ### Answer
 
@@ -60,6 +59,7 @@ par(mfrow=c(1,2), mar=c(4,4,5,2))
 plot(fit.lasso, main="Lasso")
 plot(fit.ridge, main="Ridge")                  
 ```
+
 ```{r}
 cat("The optimal value of lambda is:", fit.ridge$lambda.min)
 cat("The optimal value of lambda is:", fit.lasso$lambda.min)
@@ -69,10 +69,7 @@ cat("The optimal value of lambda is:", fit.lasso$lambda.min)
 
 ### Problem 1.b (2 points)
 
-Create a data table that for each value of 'lambda.min' and 'lambda.1se' for each model fitted in problem 1.a reports:
-* the corresponding AUC,
-* the corresponding model size. 
-Use 3 significant digits for floating point values and comment on these results. Hint: The AUC values are stored in the field called 'cvm'. 
+Create a data table that for each value of 'lambda.min' and 'lambda.1se' for each model fitted in problem 1.a reports: \* the corresponding AUC, \* the corresponding model size. Use 3 significant digits for floating point values and comment on these results. Hint: The AUC values are stored in the field called 'cvm'.
 
 ### Answer
 
@@ -116,7 +113,7 @@ kable(table, caption = "Lambda values with its model size and AUC")
 
 ### Problem 1.c (7 points)
 
-Perform both backward (we’ll later refer to this as model B) and forward (model S) stepwise selection on the same training set derived in problem 1.a. Report the variables selected and their standardized regression coefficients in decreasing order of the absolute value of their standardized regression coefficient. Discuss the results and how the different variables entering or leaving the model influenced the final result. 
+Perform both backward (we'll later refer to this as model B) and forward (model S) stepwise selection on the same training set derived in problem 1.a. Report the variables selected and their standardized regression coefficients in decreasing order of the absolute value of their standardized regression coefficient. Discuss the results and how the different variables entering or leaving the model influenced the final result.
 
 ### Answer
 
@@ -138,7 +135,8 @@ B.order<- order(abs(B.coef), decreasing = TRUE)
 S.coef <-model.S$coefficients
 S.order<- order(abs(S.coef), decreasing = TRUE)
 table <- list(B.coef[B.order], S.coef[S.order])
-kable(table, col.names = "Coefficients", caption = "Coefficients of Model B and Model S")
+kable(table, col.names = "Coefficients", caption = "Coefficients of Model B and Model S") %>% 
+  kable_styling(latex_options = "hold_position")
 ```
 
 \newpage
@@ -153,8 +151,8 @@ Compare the goodness of fit of model B and model S in an appropriate way.
 #Testing goodness of fit of model B and model S
 cat("Model B deviance: ", model.B$deviance)
 cat("Model S deviance: ", model.S$deviance)
-pchisq(model.B$null.deviance - model.B$deviance, df =15, lower.tail =FALSE)
-pchisq(model.S$null.deviance - model.S$deviance, df =15, lower.tail =FALSE)
+pchisq(model.B$null.deviance - model.B$deviance, df = 15, lower.tail = FALSE)
+pchisq(model.S$null.deviance - model.S$deviance, df = 15, lower.tail = FALSE)
 ```
 
 \newpage
@@ -204,17 +202,15 @@ train.auc <- c(AUC.lambda1se.lasso, AUC.lambda1se.ridge, model.B.auc$auc, model.
 test.auc <- c(lasso.auc, ridge.auc, B.auc, S.auc)
 models <- c("Lasso Regression", "Ridge Regression", "Model B", "Model S")
 # We make a table and voila! 
-table = data.table(models, train.auc, test.auc)
-kable(table)
+table <- data.table(models, train.auc, test.auc)
+kable(table, caption = "Training and Testing Acuraccy of each Model")
 ```
-
 
 \newpage
 
 ## Problem 2 (40 points)
 
-File GDM.raw.txt (available from the accompanying zip folder on Learn) contains 176 SNPs to be studied for association with incidence of gestational diabetes (a form of diabetes that is specific to pregnant women). SNP names are given in the form “rs1234_X” where “rs1234” is the official identifier (rsID), and “X” (one of A, C, G, T) is the reference allele.
-
+File GDM.raw.txt (available from the accompanying zip folder on Learn) contains 176 SNPs to be studied for association with incidence of gestational diabetes (a form of diabetes that is specific to pregnant women). SNP names are given in the form "rs1234_X" where "rs1234" is the official identifier (rsID), and "X" (one of A, C, G, T) is the reference allele.
 
 ### Problem 2.a (3 points)
 
@@ -223,36 +219,99 @@ Read file GDM.raw.txt into a data table named gdm.dt. Impute missing values in g
 ### Answer
 
 ```{r}
-# Enter code here.
+gdm.dt <- data.table(fread("data_assignment2/GDM.raw.txt"))
 ```
 
+```{r}
+#Performing Imputation using median
+for (colnm in colnames(gdm.dt,-1)){
+  gdm.dt[[colnm]][is.na(gdm.dt[[colnm]])] <- median(gdm.dt[[colnm]], na.rm = T)
+}
+```
 
 ### Problem 2.b (8 points)
 
-Write function univ.glm.test <- function(x, y, order = FALSE) where x is a data table of SNPs, y is a binary outcome vector, and order is a boolean. The function should fit a logistic regression model for each SNP in x, and return a data table containing SNP names, regression coefficients, odds ratios, standard errors and p-values. If order is set to TRUE, the output data table should be ordered by increasing p-value.
+Write function univ.glm.test \<- function(x, y, order = FALSE) where x is a data table of SNPs, y is a binary outcome vector, and order is a boolean. The function should fit a logistic regression model for each SNP in x, and return a data table containing SNP names, regression coefficients, odds ratios, standard errors and p-values. If order is set to TRUE, the output data table should be ordered by increasing p-value.
 
 ```{r}
-# Enter code here.
+univ.glm.test <- function(x, y, order = FALSE){
+  stopifnot(nrow(x) == length(y))
+  output <- data.table("SNP"=character(), 
+                       "coefficients"=numeric(), "odds.ratios"=numeric(), 
+                       "std.error"=numeric(), "p.value"=numeric())
+  for (i in 1:ncol(x)){
+    regr <- glm(y ~ x[[i]], family = binomial(link = "logit"))
+    summarised <- coef(summary(regr))
+  ## remove the row corresponding to the intercept and the column containing
+  ## the t-value, then convert to a dataframe
+    output <- rbind(output, list(names(x)[i], summarised[2,1],
+                                 exp(summarised[2,1]), summarised[2,2],
+                                 summarised[2,4]))
+  }
+  ## assign better column names
+  # colnames(output) <- c("SNP", "Coefficients", "odds ratios", "std.error", "p.value")
+  if(order == TRUE){
+    output <- output[order(p.value)]
+  }
+  return(output)
+}
 ```
-
 
 ### Problem 2.c (5 points)
 
-Using function univ.glm.test(), run an association study for all the SNPs in gdm.dt against having gestational diabetes (column “pheno”). For the SNP that is most strongly associated to increased risk of gestational diabetes and the one with most significant protective effect, report the summary statistics from the GWAS as well as the 95% and 99% confidence intervals on the odds ratio.
+Using function univ.glm.test(), run an association study for all the SNPs in gdm.dt against having gestational diabetes (column "pheno"). For the SNP that is most strongly associated to increased risk of gestational diabetes and the one with most significant protective effect, report the summary statistics from the GWAS as well as the 95% and 99% confidence intervals on the odds ratio.
 
 ```{r}
-# Enter code here.
+x <- gdm.dt[, 4:ncol(gdm.dt)]
+y <- gdm.dt[[3]]
+study <- univ.glm.test(x, y)
+kable(head(study), caption = "Linear regression on Pheno vs SNP") %>%
+  kable_styling(latex_options = "hold_position")
 ```
+```{r}
+index <- which(study$odds.ratio == max(study$odds.ratio))
+kable(study[index, ], 
+      caption=" most strongly associated to increased risk of gestational diabetes") %>% 
+  kable_styling(full_width = F, position = "center", latex_options = "hold_position")
+```
+```{r}
+strong.coef <- study[index, ]$coefficients
+strong.se <- study[index,]$std.error
 
+confidence.int.95 <- round(exp(strong.coef + 1.96 * strong.coef*c(-1,1)), 3)
+confidence.int.99 <- round(exp(strong.coef + 2.576 * strong.coef*c(-1,1)),3)
+
+newindex <- which(study$odds.ratio < 1)
+best <- study[newindex,]
+# Select the SNP with lowest p value
+index3 <- which(best$p.value == min(best$p.value))
+best.SNP <- best[index3]
+kable(best.SNP, 
+      caption= "most protective effect on gestational diabetes") %>% 
+  kable_styling(full_width = F, position = "center", latex_options = "hold_position")
+#We now find the confidence interval for odds ratio
+best.coef <- best.SNP$coefficients
+best.se <- best.SNP$std.error
+best.ci.95 <- round(exp(best.coef +1.96*best.se *c(-1,1)),3)
+best.ci.99 <- round(exp(best.coef +2.576*best.se *c(-1,1)),3)
+#Output
+
+cat(" SNP most strongly associated to increased risk of gestational     diabetes is", 
+    "\n 95% Confidence Inteval = ", confidence.int.95, 
+    "\n 99% Confidence Interval = ", confidence.int.99)
+cat("\n SNPs with most protective effect on gestational diabetes is", 
+    "\n 95% Confidence Inteval = ", best.ci.95, 
+    "\n 99% Confidence Interval = ", best.ci.99)
+```
+We can see that SNP rs1423096_T has the highest odds ratio (1.91758) and hence is the most strongly associated to increased risk of gestational diabetes. In fact, this SNP increases the odds of having gestational diabetes by about 92!. The SNP with most significant protective effect is rs2237897_T and it reduced the risk of diabetes by about 35%.
 
 ### Problem 2.d (4points)
 
-Merge your GWAS results with the table of gene names provided in file GDM.annot.txt (available from the accompanying zip folder on Learn). For SNPs that have p-value $< 10^{-4}$ (hit SNPs) report SNP name, effect allele, chromosome number and corresponding gene name. Separately, report for each ‘hit SNP’ the names of the genes that are within a 1Mb window from the SNP position on the chromosome. Note: That’s genes that fall within +/- 1,000,000 positions using the ‘pos’ column in the dataset.
+Merge your GWAS results with the table of gene names provided in file GDM.annot.txt (available from the accompanying zip folder on Learn). For SNPs that have p-value $< 10^{-4}$ (hit SNPs) report SNP name, effect allele, chromosome number and corresponding gene name. Separately, report for each 'hit SNP' the names of the genes that are within a 1Mb window from the SNP position on the chromosome. Note: That's genes that fall within +/- 1,000,000 positions using the 'pos' column in the dataset.
 
 ```{r}
 # Enter code here.
 ```
-
 
 ### Problem 2.e (8 points)
 
@@ -262,7 +321,6 @@ Build a weighted genetic risk score that includes all SNPs with p-value $< 10^{-
 # Enter code here.
 ```
 
-
 ### Problem 2.f (4 points)
 
 File GDM.test.txt (available from the accompanying zip folder on Learn) contains genotypes of another 40 pregnant women with and without gestational diabetes (assume that the reference allele is the same one that was specified in file GDM.raw.txt). Read the file into variable gdm.test. For the set of patients in gdm.test, compute the three genetic risk scores as defined in problem 2.e using the same set of SNPs and corresponding weights. Add the three scores as columns to gdm.test (hint: use the same columnnames as before).
@@ -271,7 +329,6 @@ File GDM.test.txt (available from the accompanying zip folder on Learn) contains
 # Enter code here.
 ```
 
-
 ### Problem 2.g (4 points)
 
 Use the logistic regression models fitted in problem 2.e to predict the outcome of patients in gdm.test. Compute the test log-likelihood for the predicted probabilities from the three genetic risk score models.
@@ -279,7 +336,6 @@ Use the logistic regression models fitted in problem 2.e to predict the outcome 
 ```{r}
 # Enter code here.
 ```
-
 
 ### Problem 2.h (4points)
 
@@ -293,8 +349,7 @@ File GDM.study2.txt (available from the accompanying zip folder on Learn) contai
 
 ## Problem 3 (33 points)
 
-File nki.csv (available from the accompanying zip folder on Learn) contains data for 144 breast cancer patients. The dataset contains a binary outcome variable (“Event”, indicating the insurgence of further complications after operation), covariates describing the tumour and the age of the patient, and gene expressions for 70 genes found to be prognostic of survival.
-
+File nki.csv (available from the accompanying zip folder on Learn) contains data for 144 breast cancer patients. The dataset contains a binary outcome variable ("Event", indicating the insurgence of further complications after operation), covariates describing the tumour and the age of the patient, and gene expressions for 70 genes found to be prognostic of survival.
 
 ### Problem 3.a (6 points)
 
@@ -304,10 +359,10 @@ Compute the matrix of correlations between the gene expression variables, and di
 nki <- read.csv("data_assignment2/nki.csv")
 head(nki)
 ```
+
 ```{r}
 cor(nki[,7:76])
 ```
-
 
 ### Problem 3.b (8 points)
 
@@ -317,15 +372,13 @@ Run PCA (only over the columns containing gene expressions), in order to derive 
 # Enter code here.
 ```
 
-
 ### Problem 3.c (8 points)
 
-Use plots to compare with the correlation structure observed in problem 2.a and to examine how well the dataset may explain your outcome. Discuss your findings and suggest any further steps if needed. 
+Use plots to compare with the correlation structure observed in problem 2.a and to examine how well the dataset may explain your outcome. Discuss your findings and suggest any further steps if needed.
 
 ```{r}
 # Enter code here.
 ```
-
 
 ### Problem 3.d (11 points)
 
@@ -334,5 +387,3 @@ Based on the models we examined in the labs, fit an appropriate model with the a
 ```{r}
 # Enter code here.
 ```
-
-
