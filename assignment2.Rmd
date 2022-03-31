@@ -16,6 +16,7 @@ library(MASS)
 library(knitr)
 library(kableExtra)
 library(pROC)
+library(corrplot)
 ```
 
 ## Problem 1 (27 points)
@@ -324,11 +325,11 @@ gene.names <- fread("data_assignment2/GDM.annot.txt")
 # new.study <- study
 new.study <- study %>% copy() %>%
   .[, full.snp := SNP] %>%
-  .[, c("SNP", "effect.alle") := do.call(Map, c(f = c, strsplit(SNP, "_")))]
+  .[, c("SNP", "effect.allele") := do.call(Map, c(f = c, strsplit(SNP, "_")))]
 
 merge.dt <- merge(new.study, gene.names, by.x = "SNP", by.y="snp", all = TRUE)
 hit.snps <- merge.dt[p.value<1e-4]
-kable(hit.snps[,c("SNP", "effect.alle","chrom","gene")], 
+kable(hit.snps[,c("SNP", "effect.allele","chrom","gene")], 
       caption= "SNPs that have p-value $< 10^{-4}$") %>% 
   kable_styling(latex_options = "hold_position")
 ```
@@ -448,9 +449,29 @@ gdm.study <- setDT(fread("data_assignment2/GDM.study2.txt"))
 ```
 
 ```{r}
-
+are.equal <- gdm.study$effect.allele == new.study$effect.
+not.equal <- gdm.study$effect.allele != new.study$effect.
+kable(table(are.equal, not.equal), caption = "Confusion Matrix") %>%
+  kable_styling(latex_options = "hold_position")
 ```
 
+```{r}
+beta1 <- gdm.study$beta
+beta2 <- new.study$coefficients
+beta2[not.equal] <- -beta2[not.equal]
+
+weight1 <- 1/ gdm.study$se
+weight2 <- 1/ new.study$std.error
+head(weight1)
+head(weight2)
+
+beta_meta_analysis = (weight1*beta1 + weight2*beta2)/(weight1 + weight2)
+standard_error_meta_analysis = sqrt(1 / weight1 + weight2)
+p_value_meta_analysis = 2*pnorm(abs(beta_meta_analysis / standard_error_meta_analysis), lower.tail = F)
+summary = merge(gdm.study, new.study, by.x = c("snp","effect.allele"),by.y=c("SNP","effect.allele"), all=TRUE)
+# [,c("snp", "effect.allele", "other.allele")]
+summary = cbind(summary, data.table(beta_meta_analysis = beta_meta_analysis, standard_error_meta_analysis = standard_error_meta_analysis, p.value= p_value_meta_analysis, odds.ratio = exp(beta_meta_analysis)))
+```
 
 \newpage
 
@@ -466,11 +487,27 @@ Compute the matrix of correlations between the gene expression variables, and di
 
 ```{r}
 nki <- read.csv("data_assignment2/nki.csv")
-head(nki)
 ```
 
 ```{r}
-cor(nki[,7:76])
+nki.cor <- cor(nki[,7:76], use="pairwise.complete")
+corrplot(nki.cor, order="hclust", diag=FALSE, tl.col="black", tl.cex = 0.4, method = "square" , title="Correlation matrix (ordered by hierarchical clustering)", type = 'upper', mar=c(0,0,1,0))
+```
+```{r}
+gene1 <- gene2 <- corr <- c()
+for (i in 1:nrow(nki.cor)){
+  for (j in 1:ncol(nki.cor)){
+    if (abs(nki.cor[i,j])>0.8 & nki.cor[i,j] !=1){
+      gene1 <- c(gene1, rownames(nki.cor)[i])
+      gene2 <- c(gene2, colnames(nki.cor)[j])
+      corr <- c(corr, nki.cor[i,j])
+    }
+  }
+}
+
+cor0.8 <- data.table(gene1, gene2, corr)
+kable(unique(cor0.8, by = "corr"), caption = "Correlation Coefficient $> 0.8$") %>%
+  kable_styling(latex_options = "hold_position")
 ```
 
 ### Problem 3.b (8 points)
@@ -480,7 +517,9 @@ Run PCA (only over the columns containing gene expressions), in order to derive 
 ### Answer
 
 ```{r}
-# Enter code here.
+nki.pca<- prcomp(nki[, 7:76], center = T, scale = T)
+# Display the summary of the PCA and the percentage explained
+summary(nki.pca)
 ```
 
 ### Problem 3.c (8 points)
