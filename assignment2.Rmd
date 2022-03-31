@@ -272,12 +272,14 @@ study <- univ.glm.test(x, y)
 kable(head(study), caption = "Logistic Regression on Pheno vs  each SNP") %>%
   kable_styling(latex_options = "hold_position")
 ```
+
 ```{r}
 index <- which(study$odds.ratio == max(study$odds.ratio))
 kable(study[index, ], 
       caption=" most strongly associated to increased risk of gestational diabetes") %>% 
   kable_styling(full_width = F, position = "center", latex_options = "hold_position")
 ```
+
 ```{r}
 strong.coef <- study[index, ]$coefficients
 strong.se <- study[index,]$std.error
@@ -307,6 +309,7 @@ cat("\n SNPs with most protective effect on gestational diabetes is",
     "\n 95% Confidence Inteval = ", best.ci.95, 
     "\n 99% Confidence Interval = ", best.ci.99)
 ```
+
 We can see that SNP rs1423096_T has the highest odds ratio (1.91758) and hence is the most strongly associated to increased risk of gestational diabetes. In fact, this SNP increases the odds of having gestational diabetes by about 92!. The SNP with most significant protective effect is rs2237897_T and it reduced the risk of diabetes by about 35%.
 
 ### Problem 2.d (4points)
@@ -318,8 +321,8 @@ Merge your GWAS results with the table of gene names provided in file GDM.annot.
 ```{r}
 gene.names <- fread("data_assignment2/GDM.annot.txt")
 # study
-new.study <- study
-new.study <- new.study %>%
+# new.study <- study
+new.study <- study %>% copy() %>%
   .[, full.snp := SNP] %>%
   .[, c("SNP", "effect.alle") := do.call(Map, c(f = c, strsplit(SNP, "_")))]
 
@@ -354,20 +357,23 @@ Build a weighted genetic risk score that includes all SNPs with p-value $< 10^{-
 #Defining each weighted genetic risk score
 hit.snp.1 <- merge.dt[p.value<1e-4]
 gdm.1 <- gdm.dt[, .SD, .SDcols = merge.dt[p.value <1e-4]$full.snp]
+names(gdm.1) <- gsub("_.", "", x=names(gdm.1))
 wgrs.1 <- as.matrix(gdm.1) %*% hit.snp.1$coefficients
 
 hit.snp.2 <- merge.dt[p.value<1e-3]
 gdm.2 <- gdm.dt[, .SD, .SDcols = merge.dt[p.value <1e-3]$full.snp]
+names(gdm.2) <- gsub("_.", "", x=names(gdm.2))
 wgrs.2 <- as.matrix(gdm.2) %*% hit.snp.2$coefficients
 
 hit.snp.3 <- merge.dt[gene=="FTO"]
 gdm.3 <- gdm.dt[, .SD, .SDcols = merge.dt[gene=="FTO"]$full.snp]
+names(gdm.3) <- gsub("_.", "", x=names(gdm.3))
 wgrs.3 <- as.matrix(gdm.3) %*% hit.snp.3$coefficients
 
 #Adding 3 columns to gdm.dt
-scores <- c(wgrs.1,wgrs.2, wgrs.3)
-gdm.dt <- gdm.dt %>% .[, score.1:=wgrs.1] %>%
-  .[, score.2:=wgrs.2] %>% .[, score.3:=wgrs.3]
+scores <- c("score.1", "score.2", "score.3")
+gdm.dt <- gdm.dt %>% copy() %>% 
+  .[,`:=`(scores.1=wgrs.1, scores.2=wgrs.2, scores.3=wgrs.3)]
 ```
 
 ```{r}
@@ -390,7 +396,18 @@ File GDM.test.txt (available from the accompanying zip folder on Learn) contains
 ### Answer
 
 ```{r}
-gdm.test <- data.table(fread("data_assignment2/GDM.test.txt"))
+gdm.test <- setDT(fread("data_assignment2/GDM.test.txt"))
+```
+
+```{r}
+gdm1.colname <- colnames(gdm.1)
+gdm.test.1 <- gdm.test[,..gdm1.colname]
+wgrs.1 <- as.matrix(gdm.test.1) %*% hit.snp.1$coefficients
+gdm2.colname <- colnames(gdm.2)
+gdm.test.2 <- gdm.test[,..gdm2.colname]
+
+gdm3.colname <- colnames(gdm.3)
+gdm.test.3 <- gdm.test[,..gdm3.colname]
 ```
 
 ### Problem 2.g (4 points)
