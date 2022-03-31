@@ -17,6 +17,7 @@ library(knitr)
 library(kableExtra)
 library(pROC)
 library(corrplot)
+library(factoextra)
 ```
 
 ## Problem 1 (27 points)
@@ -516,10 +517,24 @@ Run PCA (only over the columns containing gene expressions), in order to derive 
 
 ### Answer
 
+```{r warning=FALSE}
+nki.pca<- prcomp(nki[,7:76], center=TRUE, scale = TRUE)
+nki.cumsum <- cumsum(nki.pca$sdev^2 / sum(nki.pca$sdev^2))
+plot(nki.pca, type="line", main="Scree Plot of 10 Principal Componenets")
+plot(nki.cumsum, type="line", main="Cumulative Variance of Principal Components")
+abline(v = 32, col="red", lty=5)
+abline(h = 0.90, col="red", lty=5)
+legend("topleft", legend=c("Cut-off @ PC32"),
+       col=c("blue"), lty=5, cex=0.6)
+```
+
 ```{r}
-nki.pca<- prcomp(nki[, 7:76], center = T, scale = T)
-# Display the summary of the PCA and the percentage explained
-summary(nki.pca)
+barplot(summary(nki.pca)$importance[2,], ylim=c(0, 0.25))
+```
+
+```{r warning=FALSE}
+fviz_pca_ind(nki.pca, geom='point', habillage = nki$Event, axes = c(1,2), addEllipses = T, palette="jco", legend.title="Diagnosis")
+fviz_pca_biplot(nki.pca, geom ='point', repel = T,col.var = "red")
 ```
 
 ### Problem 3.c (8 points)
