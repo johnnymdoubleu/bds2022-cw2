@@ -295,19 +295,19 @@ best.SNP <- best[index3]
 kable(best.SNP, 
       caption= "most protective effect on gestational diabetes") %>% 
   kable_styling(full_width = F, position = "center", latex_options = "hold_position")
-#We now find the confidence interval for odds ratio
+#Compute Confidence Interval
 best.coef <- best.SNP$coefficients
 best.se <- best.SNP$std.error
 best.ci.95 <- round(exp(best.coef +1.96*best.se *c(-1,1)),3)
 best.ci.99 <- round(exp(best.coef +2.576*best.se *c(-1,1)),3)
-#Output
 
-cat(" SNP most strongly associated to increased risk of gestational     diabetes is", 
-    "\n 95% Confidence Inteval = ", confidence.int.95, 
-    "\n 99% Confidence Interval = ", confidence.int.99)
-cat("\n SNPs with most protective effect on gestational diabetes is", 
-    "\n 95% Confidence Inteval = ", best.ci.95, 
-    "\n 99% Confidence Interval = ", best.ci.99)
+#Output
+cat(" SNP most strongly associated to increased risk of gestational     diabetes, ", 
+    "\n 95% Confidence Interval is", confidence.int.95, 
+    "\n 99% Confidence Interval is", confidence.int.99)
+cat("\n SNPs with most protective effect on gestational diabetes,", 
+    "\n 95% Confidence Interval is", best.ci.95, 
+    "\n 99% Confidence Interval is", best.ci.99)
 ```
 
 We can see that SNP rs1423096_T has the highest odds ratio (1.91758) and hence is the most strongly associated to increased risk of gestational diabetes. In fact, this SNP increases the odds of having gestational diabetes by about 92!. The SNP with most significant protective effect is rs2237897_T and it reduced the risk of diabetes by about 35%.
@@ -402,12 +402,18 @@ gdm.test <- setDT(fread("data_assignment2/GDM.test.txt"))
 ```{r}
 gdm1.colname <- colnames(gdm.1)
 gdm.test.1 <- gdm.test[,..gdm1.colname]
-wgrs.1 <- as.matrix(gdm.test.1) %*% hit.snp.1$coefficients
+wgrs.test.1 <- as.matrix(gdm.test.1) %*% hit.snp.1$coefficients
 gdm2.colname <- colnames(gdm.2)
 gdm.test.2 <- gdm.test[,..gdm2.colname]
-
+wgrs.test.2 <- as.matrix(gdm.test.2) %*% hit.snp.2$coefficients
 gdm3.colname <- colnames(gdm.3)
 gdm.test.3 <- gdm.test[,..gdm3.colname]
+wgrs.test.3 <- as.matrix(gdm.test.3) %*% hit.snp.3$coefficients
+
+#Adding 3 columns to gdm.test
+scores <- c("score.1", "score.2", "score.3")
+gdm.test <- gdm.test %>% copy() %>% 
+  .[,`:=`(scores.1 = wgrs.test.1, scores.2 = wgrs.test.2, scores.3 = wgrs.test.3)]
 ```
 
 ### Problem 2.g (4 points)
@@ -417,7 +423,18 @@ Use the logistic regression models fitted in problem 2.e to predict the outcome 
 ### Answer
 
 ```{r}
-# Enter code here.
+fit1 <- glm(y ~ scores.1, family = binomial(link = "logit"), data=gdm.dt)
+pred.1 <- predict(fit1, newdata = gdm.test[,180], type="response")
+fit2 <- glm(y ~ scores.2, family = binomial(link = "logit"), data=gdm.dt)
+pred.2 <- predict(fit2, newdata = gdm.test[,181], type="response")
+fit3 <- glm(y ~ scores.3, family = binomial(link = "logit"), data=gdm.dt)
+pred.3 <- predict(fit3, newdata = gdm.test[,182], type="response")
+cat("The log likelihood of score 1:",
+    sum(gdm.test$pheno*log(pred.1)+(1-gdm.test$pheno)*log(1-pred.1)))
+cat("The log likelihood of score 1:",
+    sum(gdm.test$pheno*log(pred.2)+(1-gdm.test$pheno)*log(1-pred.2)))
+cat("The log likelihood of score 1:",
+    sum(gdm.test$pheno*log(pred.3)+(1-gdm.test$pheno)*log(1-pred.3)))
 ```
 
 ### Problem 2.h (4points)
@@ -427,8 +444,13 @@ File GDM.study2.txt (available from the accompanying zip folder on Learn) contai
 ### Answer
 
 ```{r}
-# Enter code here.
+gdm.study <- setDT(fread("data_assignment2/GDM.study2.txt"))
 ```
+
+```{r}
+
+```
+
 
 \newpage
 
