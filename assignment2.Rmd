@@ -1,0 +1,330 @@
+---
+title: "Assignment 2"
+author: "Johnny Lee, s1687781"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+Sys.setlocale("LC_ALL", "English")
+library(caret)
+library(data.table)
+library(glmnet)
+library(MASS)
+library(knitr)
+library(pROC)
+```
+
+## Problem 1 (27 points)
+
+File wdbc2.csv (available from the accompanying zip folder on Learn) refers to a study of breast cancer where the outcome of interest is the type of the tumour (benign or malignant, recorded in column “diagnosis”). The study collected 30 imaging biomarkers on 569 patients.
+
+
+### Problem 1.a (7 points)
+
+Using package caret, create a data partition so that the training set contains 70% of the observations (set the random seed to 984065 beforehand). Fit both a ridge regression model and a lasso model which uses cross-validation on the training set to diagnose the type of tumour from the 30 biomarkers. Then use a plot to help identify the penalty parameter $\lambda$ that maximizes the AUC.
+Note: There is no need to use the prepare.glmnet() function from lab 4, using as.matrix() with the required columns is sufficient.
+
+### Answer
+
+```{r}
+breast <- read.csv("data_assignment2/wdbc2.csv")
+head(breast)
+```
+
+```{r}
+set.seed(984065)
+# Change the diagnosis factor to a numerical value
+# we split into 70% training and 30% testing data
+breast$diagnosis <- ifelse(breast$diagnosis=="benign", 0, 1)
+split.index <- createDataPartition(breast$diagnosis, 
+                                   p = .7, list = TRUE)$Resample1
+#train and test data sets
+train.breast <- breast[split.index, ]
+test.breast <- breast[-split.index, ]
+
+#define explanatory and response variable matrix
+biomarkers.x <- as.matrix(subset(train.breast, select = -c(id, diagnosis)))
+biomarkers.y <- as.matrix(subset(train.breast, select = c(diagnosis)))
+
+```
+```{r}
+set.seed(984065)
+# We fit the ridge regression on training data
+fit.lasso <- cv.glmnet(biomarkers.x, biomarkers.y , alpha = 1, family = "binomial", type.measure = "auc")
+fit.ridge <- cv.glmnet(biomarkers.x, biomarkers.y , alpha = 0, family = "binomial", type.measure = "auc")
+# We fit the Lasso regression on training data
+
+par(mfrow=c(1,2), mar=c(4,4,5,2))
+plot(fit.lasso, main="Lasso")
+plot(fit.ridge, main="Ridge")                  
+```
+```{r}
+cat("The optimal value of lambda is:", fit.ridge$lambda.min)
+cat("The optimal value of lambda is:", fit.lasso$lambda.min)
+```
+
+\newpage
+
+### Problem 1.b (2 points)
+
+Create a data table that for each value of 'lambda.min' and 'lambda.1se' for each model fitted in problem 1.a reports:
+* the corresponding AUC,
+* the corresponding model size. 
+Use 3 significant digits for floating point values and comment on these results. Hint: The AUC values are stored in the field called 'cvm'. 
+
+### Answer
+
+```{r}
+#Our Lambdas
+lambdamin.lasso <- fit.lasso$lambda.min
+lambdamin.ridge <- fit.ridge$lambda.min
+ms.lasso <- fit.lasso$nzero
+# We will need to find the position at which lambda min is located at lambda
+index_lambdamin.lasso <- which(lambdamin.lasso == fit.lasso$lambda)
+index_lambdamin.ridge <- which(lambdamin.ridge == fit.ridge$lambda)
+#Now we find the position at which lambda lse is located
+#lambda lse is the largest value of lambda that is located within 1 standard error
+lambda1se.lasso <- fit.lasso$lambda.1se
+lambda1se.ridge <- fit.ridge$lambda.1se
+# We will need to find the position at which lambda lse is located at lambda
+index_lambda1se.lasso <- which(lambda1se.lasso == fit.lasso$lambda)
+index_lambda1se.ridge <- which(lambda1se.ridge == fit.ridge$lambda)
+#We can find the corresponding AUC's
+AUC.lambdamin.lasso <- signif(fit.lasso$cvm[index_lambdamin.lasso],3)
+AUC.lambda1se.lasso <- signif(fit.lasso$cvm[index_lambda1se.lasso],3)
+AUC.lambdamin.ridge <- signif(fit.ridge$cvm[index_lambdamin.ridge],3)
+AUC.lambda1se.ridge <- signif(fit.ridge$cvm[index_lambda1se.ridge],3)
+ms.lasso.min <- fit.lasso$nzero[index_lambdamin.lasso]
+ms.lasso.1se <- fit.lasso$nzero[index_lambda1se.lasso]
+ms.ridge.min <- fit.ridge$nzero[index_lambdamin.lasso]
+ms.ridge.1se <- fit.ridge$nzero[index_lambda1se.lasso]
+table1 <-data.table(model = c("Lasso.min", "Lasso.1se", "Ridge.min", "Ridge.1se"),
+                    Lambda = c(signif(lambdamin.lasso,3), signif(lambda1se.lasso,3), signif(lambdamin.ridge,3), signif(lambda1se.ridge,3)), 
+                    ModelSize = c(ms.lasso.min, ms.lasso.1se, ms.ridge.min, ms.ridge.1se),
+                    AUC = c(AUC.lambdamin.lasso, AUC.lambda1se.lasso, AUC.lambdamin.ridge, AUC.lambda1se.ridge))
+table1 
+```
+
+\newpage
+
+### Problem 1.c (7 points)
+
+Perform both backward (we’ll later refer to this as model B) and forward (model S) stepwise selection on the same training set derived in problem 1.a. Report the variables selected and their standardized regression coefficients in decreasing order of the absolute value of their standardized regression coefficient. Discuss the results and how the different variables entering or leaving the model influenced the final result. 
+
+### Answer
+
+```{r include=FALSE}
+#We define full model, null model
+full_model <- glm(diagnosis~., data = train.breast)
+Null_model <- glm(diagnosis~1, data = train.breast)
+
+model.B<- stepAIC(full_model, direction = "back")
+model.S<- stepAIC(Null_model, scope = list(upper = full_model), direction ="forward")
+```
+
+The forward model takes a null model(which is a model without any feature) and only considers the intercept as a starting point and then progress towards the full model (with 30 features) by adding features. It can be seen here that the final model (forward) considers more features than the backward model. The forward model considers 15 features instead of 14 (in the backwards model)
+
+```{r}
+B.coef <-model.B$coefficients
+B.order<- order(abs(B.coef), decreasing = TRUE)
+S.coef <-model.S$coefficients
+S.order<- order(abs(S.coef), decreasing = TRUE)
+kable(list(B.coef[B.order], S.coef[S.order]),col.names = "Coefficients")
+```
+
+\newpage
+
+### Problem 1.d (3 points)
+
+Compare the goodness of fit of model B and model S in an appropriate way.
+
+### Answer
+
+```{r}
+# Enter code here.
+cat("Model B deviance: ", model.B$deviance)
+cat("Model S deviance: ", model.S$deviance)
+pchisq(model.B$null.deviance - model.B$deviance, df =15, lower.tail =FALSE)
+pchisq(model.S$null.deviance - model.S$deviance, df =15, lower.tail =FALSE)
+```
+
+\newpage
+
+### Problem 1.e (2 points)
+
+Compute the training AUC for model B and model S.
+
+### Answer
+
+```{r}
+model.B.auc <- roc(train.breast$diagnosis, model.B$fitted.values, plot =TRUE, 
+    xlim = c(0,1), col="red")
+model.S.auc <- roc(train.breast$diagnosis, model.S$fitted.values, plot = TRUE, 
+    add= TRUE,col = "blue")
+legend("topright", legend = c("Model B", "Model S"),
+         col = c("red", "blue"), lty = 1, cex = 0.8, bty = "n")
+```
+
+\newpage
+
+### Problem 1.f (6 points)
+
+Use the four models to predict the outcome for the observations in the test set (use the lambda at 1 standard error for the penalised models). Plot the ROC curves of these models (on the sameplot, using different colours) and report their test AUCs. Compare the training AUCs obtained in problems 1.b and 1.e with the test AUCs and discuss the fit of the different models.
+
+### Answer
+
+```{r}
+
+#Lasso model 
+lasso.pred <- predict(fit.lasso, newx = as.matrix(test.breast[,-c(1,2)]), s="lambda.1se")
+#Ridge Regression model 
+ridge.pred <- predict(fit.ridge, newx = as.matrix(test.breast[,-c(1,2)]), s="lambda.1se")
+#Model B
+B.pred <- predict(model.B, newdata = test.breast, type = "response")
+#Model S
+S.pred <- predict(model.S, newdata = test.breast, type = "response")
+#Now we plot the ROC curves 
+lasso.auc <- roc(test.breast$diagnosis, lasso.pred, plot =TRUE, col = "red")$auc
+ridge.auc <- roc(test.breast$diagnosis, ridge.pred, plot =TRUE, col = "blue", add= TRUE)$auc
+B.auc <- roc(test.breast$diagnosis, B.pred, plot =TRUE, col = "green", add= TRUE)$auc
+S.auc <- roc(test.breast$diagnosis, S.pred, plot =TRUE, col = "yellow", add= TRUE)$auc
+#Compare the AUCs 
+train.auc <- c(AUC.lambda1se.lasso, AUC.lambda1se.ridge, model.B.auc$auc, model.S.auc$auc)
+test.auc <- c(lasso.auc, ridge.auc, B.auc, S.auc)
+models <- c("Lasso Regression", "Ridge Regression", "Model B", "Model S")
+# We make a table and voila! 
+table = data.table(models, train.auc, test.auc)
+kable(table)
+```
+
+
+\newpage
+
+## Problem 2 (40 points)
+
+File GDM.raw.txt (available from the accompanying zip folder on Learn) contains 176 SNPs to be studied for association with incidence of gestational diabetes (a form of diabetes that is specific to pregnant women). SNP names are given in the form “rs1234_X” where “rs1234” is the official identifier (rsID), and “X” (one of A, C, G, T) is the reference allele.
+
+
+### Problem 2.a (3 points)
+
+Read file GDM.raw.txt into a data table named gdm.dt. Impute missing values in gdm.dt according to SNP-wise median allele count.
+
+### Answer
+
+```{r}
+# Enter code here.
+```
+
+
+### Problem 2.b (8 points)
+
+Write function univ.glm.test <- function(x, y, order = FALSE) where x is a data table of SNPs, y is a binary outcome vector, and order is a boolean. The function should fit a logistic regression model for each SNP in x, and return a data table containing SNP names, regression coefficients, odds ratios, standard errors and p-values. If order is set to TRUE, the output data table should be ordered by increasing p-value.
+
+```{r}
+# Enter code here.
+```
+
+
+### Problem 2.c (5 points)
+
+Using function univ.glm.test(), run an association study for all the SNPs in gdm.dt against having gestational diabetes (column “pheno”). For the SNP that is most strongly associated to increased risk of gestational diabetes and the one with most significant protective effect, report the summary statistics from the GWAS as well as the 95% and 99% confidence intervals on the odds ratio.
+
+```{r}
+# Enter code here.
+```
+
+
+### Problem 2.d (4points)
+
+Merge your GWAS results with the table of gene names provided in file GDM.annot.txt (available from the accompanying zip folder on Learn). For SNPs that have p-value $< 10^{-4}$ (hit SNPs) report SNP name, effect allele, chromosome number and corresponding gene name. Separately, report for each ‘hit SNP’ the names of the genes that are within a 1Mb window from the SNP position on the chromosome. Note: That’s genes that fall within +/- 1,000,000 positions using the ‘pos’ column in the dataset.
+
+```{r}
+# Enter code here.
+```
+
+
+### Problem 2.e (8 points)
+
+Build a weighted genetic risk score that includes all SNPs with p-value $< 10^{-4}$, a score with all SNPs with p-value $< 10^{-3}$, and a score that only includes SNPs on the FTO gene (hint: ensure that the ordering of SNPs is respected). Add the three scores as columns to the gdm.dt data table. Fit the three scores in separate logistic regression models to test their association with gestational diabetes, and for each report odds ratio, 95% confidence interval and p-value.
+
+```{r}
+# Enter code here.
+```
+
+
+### Problem 2.f (4 points)
+
+File GDM.test.txt (available from the accompanying zip folder on Learn) contains genotypes of another 40 pregnant women with and without gestational diabetes (assume that the reference allele is the same one that was specified in file GDM.raw.txt). Read the file into variable gdm.test. For the set of patients in gdm.test, compute the three genetic risk scores as defined in problem 2.e using the same set of SNPs and corresponding weights. Add the three scores as columns to gdm.test (hint: use the same columnnames as before).
+
+```{r}
+# Enter code here.
+```
+
+
+### Problem 2.g (4 points)
+
+Use the logistic regression models fitted in problem 2.e to predict the outcome of patients in gdm.test. Compute the test log-likelihood for the predicted probabilities from the three genetic risk score models.
+
+```{r}
+# Enter code here.
+```
+
+
+### Problem 2.h (4points)
+
+File GDM.study2.txt (available from the accompanying zip folder on Learn) contains the summary statistics from a different study on the same set of SNPs. Perform a meta-analysis with the results obtained in problem 2.c (hint: remember that the effect alleles should correspond) and produce a summary of the meta-analysis results for the set of SNPs with meta-analysis p-value $< 10^{-4}$ sorted by increasing p-value.
+
+```{r}
+# Enter code here.
+```
+
+\newpage
+
+## Problem 3 (33 points)
+
+File nki.csv (available from the accompanying zip folder on Learn) contains data for 144 breast cancer patients. The dataset contains a binary outcome variable (“Event”, indicating the insurgence of further complications after operation), covariates describing the tumour and the age of the patient, and gene expressions for 70 genes found to be prognostic of survival.
+
+
+### Problem 3.a (6 points)
+
+Compute the matrix of correlations between the gene expression variables, and display it so that a block structure is highlighted. Discuss what you observe. Write some code to identify the unique pairs of (distinct) variables that have correlation coefficient greater than 0.80 in absolute value and report their correlation coefficients.
+
+```{r}
+nki <- read.csv("data_assignment2/nki.csv")
+head(nki)
+```
+```{r}
+cor(nki[,7:76])
+```
+
+
+### Problem 3.b (8 points)
+
+Run PCA (only over the columns containing gene expressions), in order to derive a patient-wise summary of all gene expressions (dimensionality reduction). Decide which components to keep and justify your decision. Test if those principal components are associated with the outcome in unadjusted logistic regression models and in models adjusted for age, estrogen receptor and grade. Justify the difference in results between unadjusted and adjusted models.
+
+```{r}
+# Enter code here.
+```
+
+
+### Problem 3.c (8 points)
+
+Use plots to compare with the correlation structure observed in problem 2.a and to examine how well the dataset may explain your outcome. Discuss your findings and suggest any further steps if needed. 
+
+```{r}
+# Enter code here.
+```
+
+
+### Problem 3.d (11 points)
+
+Based on the models we examined in the labs, fit an appropriate model with the aim to provide the most accurate prognosis you can for patients. Discuss and justify your decisions.
+
+```{r}
+# Enter code here.
+```
+
+
