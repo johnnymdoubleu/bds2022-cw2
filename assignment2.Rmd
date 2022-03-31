@@ -233,6 +233,8 @@ for (colnm in colnames(gdm.dt,-1)){
 
 Write function univ.glm.test \<- function(x, y, order = FALSE) where x is a data table of SNPs, y is a binary outcome vector, and order is a boolean. The function should fit a logistic regression model for each SNP in x, and return a data table containing SNP names, regression coefficients, odds ratios, standard errors and p-values. If order is set to TRUE, the output data table should be ordered by increasing p-value.
 
+### Answer
+
 ```{r}
 univ.glm.test <- function(x, y, order = FALSE){
   stopifnot(nrow(x) == length(y))
@@ -260,6 +262,8 @@ univ.glm.test <- function(x, y, order = FALSE){
 ### Problem 2.c (5 points)
 
 Using function univ.glm.test(), run an association study for all the SNPs in gdm.dt against having gestational diabetes (column "pheno"). For the SNP that is most strongly associated to increased risk of gestational diabetes and the one with most significant protective effect, report the summary statistics from the GWAS as well as the 95% and 99% confidence intervals on the odds ratio.
+
+### Answer
 
 ```{r}
 x <- gdm.dt[, 4:ncol(gdm.dt)]
@@ -309,13 +313,42 @@ We can see that SNP rs1423096_T has the highest odds ratio (1.91758) and hence i
 
 Merge your GWAS results with the table of gene names provided in file GDM.annot.txt (available from the accompanying zip folder on Learn). For SNPs that have p-value $< 10^{-4}$ (hit SNPs) report SNP name, effect allele, chromosome number and corresponding gene name. Separately, report for each 'hit SNP' the names of the genes that are within a 1Mb window from the SNP position on the chromosome. Note: That's genes that fall within +/- 1,000,000 positions using the 'pos' column in the dataset.
 
+### Answer
+
 ```{r}
-# Enter code here.
+gene.names <- fread("data_assignment2/GDM.annot.txt")
+# study
+new.study <- study
+new.study <- new.study %>%
+  .[, c("SNP", "effect.alle") := do.call(Map, c(f = c, strsplit(SNP, "_")))]
+
+merge.dt <- merge(new.study, gene.names, by.x = "SNP", by.y="snp", all = TRUE)
+hit.snps <- merge.dt[p.value<1e-4]
+kable(hit.snps[,c("SNP", "effect.alle","chrom","gene")], 
+      caption= "SNPs that have p-value $< 10^{-4}$") %>% 
+  kable_styling(latex_options = "hold_position")
 ```
+
+```{r}
+hit.snp.window <- data.table()
+for (i in hit.snps$SNP){
+  idx <- which(hit.snps$SNP == i)
+  window.val <- merge.dt[(merge.dt$pos>= hit.snps$pos[idx] - 1e6) &
+                           (merge.dt$pos<= hit.snps$pos[idx] + 1e6)]
+  hit.snp.window <- rbind(hit.snp.window, window.val)
+}
+# Display the genes that fall within this window
+kable(data.table(hit.snp.window$gene), col.names = "gene", 
+      caption = "Gene within $1$Mb Windo") %>%
+  kable_styling(latex_options = "hold_position")
+```
+
 
 ### Problem 2.e (8 points)
 
 Build a weighted genetic risk score that includes all SNPs with p-value $< 10^{-4}$, a score with all SNPs with p-value $< 10^{-3}$, and a score that only includes SNPs on the FTO gene (hint: ensure that the ordering of SNPs is respected). Add the three scores as columns to the gdm.dt data table. Fit the three scores in separate logistic regression models to test their association with gestational diabetes, and for each report odds ratio, 95% confidence interval and p-value.
+
+### Answer
 
 ```{r}
 # Enter code here.
@@ -325,6 +358,8 @@ Build a weighted genetic risk score that includes all SNPs with p-value $< 10^{-
 
 File GDM.test.txt (available from the accompanying zip folder on Learn) contains genotypes of another 40 pregnant women with and without gestational diabetes (assume that the reference allele is the same one that was specified in file GDM.raw.txt). Read the file into variable gdm.test. For the set of patients in gdm.test, compute the three genetic risk scores as defined in problem 2.e using the same set of SNPs and corresponding weights. Add the three scores as columns to gdm.test (hint: use the same columnnames as before).
 
+### Answer
+
 ```{r}
 # Enter code here.
 ```
@@ -333,6 +368,8 @@ File GDM.test.txt (available from the accompanying zip folder on Learn) contains
 
 Use the logistic regression models fitted in problem 2.e to predict the outcome of patients in gdm.test. Compute the test log-likelihood for the predicted probabilities from the three genetic risk score models.
 
+### Answer
+
 ```{r}
 # Enter code here.
 ```
@@ -340,6 +377,8 @@ Use the logistic regression models fitted in problem 2.e to predict the outcome 
 ### Problem 2.h (4points)
 
 File GDM.study2.txt (available from the accompanying zip folder on Learn) contains the summary statistics from a different study on the same set of SNPs. Perform a meta-analysis with the results obtained in problem 2.c (hint: remember that the effect alleles should correspond) and produce a summary of the meta-analysis results for the set of SNPs with meta-analysis p-value $< 10^{-4}$ sorted by increasing p-value.
+
+### Answer
 
 ```{r}
 # Enter code here.
