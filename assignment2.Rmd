@@ -35,8 +35,8 @@ breast <- read.csv("data_assignment2/wdbc2.csv")
 
 ```{r}
 set.seed(984065)
-# Change the diagnosis factor to a numerical value
-# we split into 70% training and 30% testing data
+
+#Splitting into training and testing data set
 breast$diagnosis <- ifelse(breast$diagnosis=="benign", 0, 1)
 split.index <- createDataPartition(breast$diagnosis, 
                                    p = .7, list = TRUE)$Resample1
@@ -47,14 +47,14 @@ test.breast <- breast[-split.index, ]
 #define explanatory and response variable matrix
 biomarkers.x <- as.matrix(subset(train.breast, select = -c(id, diagnosis)))
 biomarkers.y <- as.matrix(subset(train.breast, select = c(diagnosis)))
-
 ```
+
 ```{r}
 set.seed(984065)
-# We fit the ridge regression on training data
+#Fitting ridge regression on training data
 fit.lasso <- cv.glmnet(biomarkers.x, biomarkers.y , alpha = 1, family = "binomial", type.measure = "auc")
+#Fitting lasso regression on training data
 fit.ridge <- cv.glmnet(biomarkers.x, biomarkers.y , alpha = 0, family = "binomial", type.measure = "auc")
-# We fit the Lasso regression on training data
 
 par(mfrow=c(1,2), mar=c(4,4,5,2))
 plot(fit.lasso, main="Lasso")
@@ -77,30 +77,29 @@ Use 3 significant digits for floating point values and comment on these results.
 ### Answer
 
 ```{r}
-#Our Lambdas
+#retrieving lambda min from lasso and ridge
 lambdamin.lasso <- fit.lasso$lambda.min
 lambdamin.ridge <- fit.ridge$lambda.min
-
-# We will need to find the position at which lambda min is located at lambda
+#Position of lambda min
 index_lambdamin.lasso <- which(lambdamin.lasso == fit.lasso$lambda)
 index_lambdamin.ridge <- which(lambdamin.ridge == fit.ridge$lambda)
-#Now we find the position at which lambda lse is located
-#lambda lse is the largest value of lambda that is located within 1 standard error
+#retrieving lambda lse from lasso and ridge
 lambda1se.lasso <- fit.lasso$lambda.1se
 lambda1se.ridge <- fit.ridge$lambda.1se
-# We will need to find the position at which lambda lse is located at lambda
+#Position of lambda lse 
 index_lambda1se.lasso <- which(lambda1se.lasso == fit.lasso$lambda)
 index_lambda1se.ridge <- which(lambda1se.ridge == fit.ridge$lambda)
-#We can find the corresponding AUC's
+#AUC values of each lambda values
 AUC.lambdamin.lasso <- signif(fit.lasso$cvm[index_lambdamin.lasso],3)
 AUC.lambda1se.lasso <- signif(fit.lasso$cvm[index_lambda1se.lasso],3)
 AUC.lambdamin.ridge <- signif(fit.ridge$cvm[index_lambdamin.ridge],3)
 AUC.lambda1se.ridge <- signif(fit.ridge$cvm[index_lambda1se.ridge],3)
+#Model size of each lambda values
 ms.lasso.min <- fit.lasso$nzero[index_lambdamin.lasso]
 ms.lasso.1se <- fit.lasso$nzero[index_lambda1se.lasso]
 ms.ridge.min <- fit.ridge$nzero[index_lambdamin.lasso]
 ms.ridge.1se <- fit.ridge$nzero[index_lambda1se.lasso]
-table1 <-data.table(model = c("Lasso.min", "Lasso.1se", 
+table <-data.table(model = c("Lasso.min", "Lasso.1se", 
                               "Ridge.min", "Ridge.1se"),
                     Lambda = c(signif(lambdamin.lasso,3),
                                signif(lambda1se.lasso,3),
@@ -110,7 +109,7 @@ table1 <-data.table(model = c("Lasso.min", "Lasso.1se",
                                   ms.ridge.min, ms.ridge.1se),
                     AUC = c(AUC.lambdamin.lasso, AUC.lambda1se.lasso,
                             AUC.lambdamin.ridge, AUC.lambda1se.ridge))
-table1
+kable(table, caption = "Lambda values with its model size and AUC")
 ```
 
 \newpage
@@ -139,8 +138,7 @@ B.order<- order(abs(B.coef), decreasing = TRUE)
 S.coef <-model.S$coefficients
 S.order<- order(abs(S.coef), decreasing = TRUE)
 table <- list(B.coef[B.order], S.coef[S.order])
-kable(B.coef[B.order])
-kable(S.coef[S.order])
+kable(table, col.names = "Coefficients", caption = "Coefficients of Model B and Model S")
 ```
 
 \newpage
