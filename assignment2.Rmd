@@ -31,7 +31,6 @@ Note: There is no need to use the prepare.glmnet() function from lab 4, using as
 
 ```{r}
 breast <- read.csv("data_assignment2/wdbc2.csv")
-head(breast)
 ```
 
 ```{r}
@@ -81,7 +80,7 @@ Use 3 significant digits for floating point values and comment on these results.
 #Our Lambdas
 lambdamin.lasso <- fit.lasso$lambda.min
 lambdamin.ridge <- fit.ridge$lambda.min
-ms.lasso <- fit.lasso$nzero
+
 # We will need to find the position at which lambda min is located at lambda
 index_lambdamin.lasso <- which(lambdamin.lasso == fit.lasso$lambda)
 index_lambdamin.ridge <- which(lambdamin.ridge == fit.ridge$lambda)
@@ -101,11 +100,17 @@ ms.lasso.min <- fit.lasso$nzero[index_lambdamin.lasso]
 ms.lasso.1se <- fit.lasso$nzero[index_lambda1se.lasso]
 ms.ridge.min <- fit.ridge$nzero[index_lambdamin.lasso]
 ms.ridge.1se <- fit.ridge$nzero[index_lambda1se.lasso]
-table1 <-data.table(model = c("Lasso.min", "Lasso.1se", "Ridge.min", "Ridge.1se"),
-                    Lambda = c(signif(lambdamin.lasso,3), signif(lambda1se.lasso,3), signif(lambdamin.ridge,3), signif(lambda1se.ridge,3)), 
-                    ModelSize = c(ms.lasso.min, ms.lasso.1se, ms.ridge.min, ms.ridge.1se),
-                    AUC = c(AUC.lambdamin.lasso, AUC.lambda1se.lasso, AUC.lambdamin.ridge, AUC.lambda1se.ridge))
-table1 
+table1 <-data.table(model = c("Lasso.min", "Lasso.1se", 
+                              "Ridge.min", "Ridge.1se"),
+                    Lambda = c(signif(lambdamin.lasso,3),
+                               signif(lambda1se.lasso,3),
+                               signif(lambdamin.ridge,3),
+                               signif(lambda1se.ridge,3)), 
+                    ModelSize = c(ms.lasso.min, ms.lasso.1se, 
+                                  ms.ridge.min, ms.ridge.1se),
+                    AUC = c(AUC.lambdamin.lasso, AUC.lambda1se.lasso,
+                            AUC.lambdamin.ridge, AUC.lambda1se.ridge))
+table1
 ```
 
 \newpage
@@ -117,22 +122,25 @@ Perform both backward (we’ll later refer to this as model B) and forward (mode
 ### Answer
 
 ```{r include=FALSE}
-#We define full model, null model
-full_model <- glm(diagnosis~., data = train.breast)
-Null_model <- glm(diagnosis~1, data = train.breast)
-
-model.B<- stepAIC(full_model, direction = "back")
-model.S<- stepAIC(Null_model, scope = list(upper = full_model), direction ="forward")
+#Define full model and null model
+full.model <- glm(diagnosis~., data = train.breast)
+null.model <- glm(diagnosis~1, data = train.breast)
+#perform 
+model.B<- stepAIC(full.model, direction = "back")
+model.S<- stepAIC(null.model, scope = list(upper = full.model), direction = "forward")
 ```
 
 The forward model takes a null model(which is a model without any feature) and only considers the intercept as a starting point and then progress towards the full model (with 30 features) by adding features. It can be seen here that the final model (forward) considers more features than the backward model. The forward model considers 15 features instead of 14 (in the backwards model)
 
 ```{r}
+#Computing coefficients of each model and tabulating it.
 B.coef <-model.B$coefficients
 B.order<- order(abs(B.coef), decreasing = TRUE)
 S.coef <-model.S$coefficients
 S.order<- order(abs(S.coef), decreasing = TRUE)
-kable(list(B.coef[B.order], S.coef[S.order]),col.names = "Coefficients")
+table <- list(B.coef[B.order], S.coef[S.order])
+kable(B.coef[B.order])
+kable(S.coef[S.order])
 ```
 
 \newpage
@@ -144,7 +152,7 @@ Compare the goodness of fit of model B and model S in an appropriate way.
 ### Answer
 
 ```{r}
-# Enter code here.
+#Testing goodness of fit of model B and model S
 cat("Model B deviance: ", model.B$deviance)
 cat("Model S deviance: ", model.S$deviance)
 pchisq(model.B$null.deviance - model.B$deviance, df =15, lower.tail =FALSE)
@@ -160,10 +168,10 @@ Compute the training AUC for model B and model S.
 ### Answer
 
 ```{r}
-model.B.auc <- roc(train.breast$diagnosis, model.B$fitted.values, plot =TRUE, 
+model.B.auc <- roc(train.breast$diagnosis, model.B$fitted.values, plot = TRUE, 
     xlim = c(0,1), col="red")
 model.S.auc <- roc(train.breast$diagnosis, model.S$fitted.values, plot = TRUE, 
-    add= TRUE,col = "blue")
+    add = TRUE,col = "blue")
 legend("topright", legend = c("Model B", "Model S"),
          col = c("red", "blue"), lty = 1, cex = 0.8, bty = "n")
 ```
@@ -186,11 +194,13 @@ ridge.pred <- predict(fit.ridge, newx = as.matrix(test.breast[,-c(1,2)]), s="lam
 B.pred <- predict(model.B, newdata = test.breast, type = "response")
 #Model S
 S.pred <- predict(model.S, newdata = test.breast, type = "response")
-#Now we plot the ROC curves 
-lasso.auc <- roc(test.breast$diagnosis, lasso.pred, plot =TRUE, col = "red")$auc
-ridge.auc <- roc(test.breast$diagnosis, ridge.pred, plot =TRUE, col = "blue", add= TRUE)$auc
-B.auc <- roc(test.breast$diagnosis, B.pred, plot =TRUE, col = "green", add= TRUE)$auc
-S.auc <- roc(test.breast$diagnosis, S.pred, plot =TRUE, col = "yellow", add= TRUE)$auc
+#Plotting ROC
+lasso.auc <- roc(test.breast$diagnosis, lasso.pred, plot = TRUE, xlim = c(0,1), col = "red")$auc
+ridge.auc <- roc(test.breast$diagnosis, ridge.pred, plot = TRUE, col = "blue", add = TRUE)$auc
+B.auc <- roc(test.breast$diagnosis, B.pred, plot = TRUE, col = "green", add = TRUE)$auc
+S.auc <- roc(test.breast$diagnosis, S.pred, plot = TRUE, col = "yellow", add = TRUE)$auc
+legend("topright", legend = c("Lasso", "Ridge","Model B","Model S"),
+         col = c("red", "blue", "green", "yellow"), lty = 1, cex = 0.8, bty = "n")
 #Compare the AUCs 
 train.auc <- c(AUC.lambda1se.lasso, AUC.lambda1se.ridge, model.B.auc$auc, model.S.auc$auc)
 test.auc <- c(lasso.auc, ridge.auc, B.auc, S.auc)
