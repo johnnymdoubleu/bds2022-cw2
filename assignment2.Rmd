@@ -269,7 +269,7 @@ Using function univ.glm.test(), run an association study for all the SNPs in gdm
 x <- gdm.dt[, 4:ncol(gdm.dt)]
 y <- gdm.dt[[3]]
 study <- univ.glm.test(x, y)
-kable(head(study), caption = "Linear regression on Pheno vs SNP") %>%
+kable(head(study), caption = "Logistic Regression on Pheno vs  each SNP") %>%
   kable_styling(latex_options = "hold_position")
 ```
 ```{r}
@@ -282,8 +282,8 @@ kable(study[index, ],
 strong.coef <- study[index, ]$coefficients
 strong.se <- study[index,]$std.error
 
-confidence.int.95 <- round(exp(strong.coef + 1.96 * strong.coef*c(-1,1)), 3)
-confidence.int.99 <- round(exp(strong.coef + 2.576 * strong.coef*c(-1,1)),3)
+confidence.int.95 <- round(exp(strong.coef + 1.96 * strong.se*c(-1,1)), 3)
+confidence.int.99 <- round(exp(strong.coef + 2.576 * strong.se*c(-1,1)),3)
 
 newindex <- which(study$odds.ratio < 1)
 best <- study[newindex,]
@@ -320,6 +320,7 @@ gene.names <- fread("data_assignment2/GDM.annot.txt")
 # study
 new.study <- study
 new.study <- new.study %>%
+  .[, full.snp := SNP] %>%
   .[, c("SNP", "effect.alle") := do.call(Map, c(f = c, strsplit(SNP, "_")))]
 
 merge.dt <- merge(new.study, gene.names, by.x = "SNP", by.y="snp", all = TRUE)
@@ -343,15 +344,43 @@ kable(data.table(hit.snp.window$gene), col.names = "gene",
   kable_styling(latex_options = "hold_position")
 ```
 
-
 ### Problem 2.e (8 points)
 
 Build a weighted genetic risk score that includes all SNPs with p-value $< 10^{-4}$, a score with all SNPs with p-value $< 10^{-3}$, and a score that only includes SNPs on the FTO gene (hint: ensure that the ordering of SNPs is respected). Add the three scores as columns to the gdm.dt data table. Fit the three scores in separate logistic regression models to test their association with gestational diabetes, and for each report odds ratio, 95% confidence interval and p-value.
 
 ### Answer
 
+```{r warning=FALSE}
+#Defining each weighted genetic risk score
+hit.snp.1 <- merge.dt[p.value<1e-4]
+gdm.1 <- gdm.dt[, .SD, .SDcols = merge.dt[p.value <1e-4]$full.snp]
+wgrs.1 <- as.matrix(gdm.1) %*% hit.snp.1$coefficients
+
+hit.snp.2 <- merge.dt[p.value<1e-3]
+gdm.2 <- gdm.dt[, .SD, .SDcols = merge.dt[p.value <1e-3]$full.snp]
+wgrs.2 <- as.matrix(gdm.2) %*% hit.snp.2$coefficients
+
+hit.snp.3 <- merge.dt[gene=="FTO"]
+gdm.3 <- gdm.dt[, .SD, .SDcols = merge.dt[gene=="FTO"]$full.snp]
+wgrs.3 <- as.matrix(gdm.3) %*% hit.snp.3$coefficients
+
+#Adding 3 columns to gdm.dt
+scores <- c(wgrs.1,wgrs.2, wgrs.3)
+gdm.dt <- gdm.dt %>% .[, score.1:=wgrs.1] %>%
+  .[, score.2:=wgrs.2] %>% .[, score.3:=wgrs.3]
+```
+
 ```{r}
-# Enter code here.
+y <- gdm.dt[[3]]
+x <- gdm.dt[,180:182]
+wgrs.snp <- univ.glm.test(x, y)
+wgrs.snp <- wgrs.snp %>% 
+  .[,upper.conf.int:=round(exp(coefficients + 1.96 * std.error*-1), 3)] %>%
+  .[,lower.conf.int:=round(exp(coefficients + 1.96 * std.error), 3)] %>%
+  .[, !"coefficients"] %>% .[, !"std.error"]
+
+kable(head(wgrs.snp), caption = "Logistic regression on Pheno vs SNP") %>%
+  kable_styling(latex_options = "hold_position")
 ```
 
 ### Problem 2.f (4 points)
@@ -361,7 +390,7 @@ File GDM.test.txt (available from the accompanying zip folder on Learn) contains
 ### Answer
 
 ```{r}
-# Enter code here.
+gdm.test <- data.table(fread("data_assignment2/GDM.test.txt"))
 ```
 
 ### Problem 2.g (4 points)
@@ -394,6 +423,8 @@ File nki.csv (available from the accompanying zip folder on Learn) contains data
 
 Compute the matrix of correlations between the gene expression variables, and display it so that a block structure is highlighted. Discuss what you observe. Write some code to identify the unique pairs of (distinct) variables that have correlation coefficient greater than 0.80 in absolute value and report their correlation coefficients.
 
+### Answer
+
 ```{r}
 nki <- read.csv("data_assignment2/nki.csv")
 head(nki)
@@ -407,6 +438,8 @@ cor(nki[,7:76])
 
 Run PCA (only over the columns containing gene expressions), in order to derive a patient-wise summary of all gene expressions (dimensionality reduction). Decide which components to keep and justify your decision. Test if those principal components are associated with the outcome in unadjusted logistic regression models and in models adjusted for age, estrogen receptor and grade. Justify the difference in results between unadjusted and adjusted models.
 
+### Answer
+
 ```{r}
 # Enter code here.
 ```
@@ -415,6 +448,8 @@ Run PCA (only over the columns containing gene expressions), in order to derive 
 
 Use plots to compare with the correlation structure observed in problem 2.a and to examine how well the dataset may explain your outcome. Discuss your findings and suggest any further steps if needed.
 
+### Answer
+
 ```{r}
 # Enter code here.
 ```
@@ -422,6 +457,8 @@ Use plots to compare with the correlation structure observed in problem 2.a and 
 ### Problem 3.d (11 points)
 
 Based on the models we examined in the labs, fit an appropriate model with the aim to provide the most accurate prognosis you can for patients. Discuss and justify your decisions.
+
+### Answer
 
 ```{r}
 # Enter code here.
