@@ -1,6 +1,7 @@
 ---
 title: "Assignment 2"
 author: "Johnny Lee, s1687781"
+date: "5th April 2022"
 output:
   pdf_document: default
   html_document: default
@@ -511,31 +512,31 @@ kable(unique(cor0.8, by = "corr"), caption = "Correlation Coefficient $> 0.8$") 
   kable_styling(latex_options = "hold_position")
 ```
 
+\newpage
+
 ### Problem 3.b (8 points)
 
 Run PCA (only over the columns containing gene expressions), in order to derive a patient-wise summary of all gene expressions (dimensionality reduction). Decide which components to keep and justify your decision. Test if those principal components are associated with the outcome in unadjusted logistic regression models and in models adjusted for age, estrogen receptor and grade. Justify the difference in results between unadjusted and adjusted models.
 
 ### Answer
 
-```{r warning=FALSE}
+```{r warning=FALSE, fig.height=4}
 nki.pca<- prcomp(nki[,7:76], center=TRUE, scale = TRUE)
 nki.cumsum <- cumsum(nki.pca$sdev^2 / sum(nki.pca$sdev^2))
-plot(nki.pca, type="line", main="Scree Plot of 10 Principal Componenets")
+plot(nki.pca, type="line", main="Scree Plot of 10 Principal Componenets",
+     ylim = c(0,20))
 plot(nki.cumsum, type="line", main="Cumulative Variance of Principal Components")
-abline(v = 32, col="red", lty=5)
-abline(h = 0.90, col="red", lty=5)
-legend("topleft", legend=c("Cut-off @ PC32"),
-       col=c("blue"), lty=5, cex=0.6)
-```
+abline(v = 6, col="red", lty=5)
+abline(v = 32, col="blue", lty=5)
+abline(h = 0.50, col="red", lty=5)
+abline(h = 0.90, col="blue", lty=5)
+legend("topleft", legend=c("Cut-off @ 0.50", "Cut-off @ 0.90"),
+       col=c("red","blue"), lty=5, cex=0.6)
 
-```{r}
 barplot(summary(nki.pca)$importance[2,], ylim=c(0, 0.25))
 ```
 
-```{r warning=FALSE}
-fviz_pca_ind(nki.pca, geom='point', habillage = nki$Event, axes = c(1,2), addEllipses = T, palette="jco", legend.title="Diagnosis")
-fviz_pca_biplot(nki.pca, geom ='point', repel = T,col.var = "red")
-```
+\newpage
 
 ### Problem 3.c (8 points)
 
@@ -543,8 +544,14 @@ Use plots to compare with the correlation structure observed in problem 2.a and 
 
 ### Answer
 
-```{r}
-# Enter code here.
+```{r warning=FALSE, fig.height=3.5}
+fviz_pca_ind(nki.pca, geom='point', habillage = nki$Event, axes = c(1,2),
+             addEllipses = T, palette="jco", legend.title="Diagnosis") +
+  ggtitle("2D PCA-plot") +
+  theme(plot.title = element_text(hjust = 0.5))
+fviz_pca_biplot(nki.pca, geom ='point', repel = T,col.var = "red") +
+  ggtitle("2D PCA-biplot") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 ### Problem 3.d (11 points)
@@ -553,6 +560,37 @@ Based on the models we examined in the labs, fit an appropriate model with the a
 
 ### Answer
 
-```{r}
-# Enter code here.
+```{r warning=FALSE}
+invisible({capture.output({
+  set.seed(984065)
+  event <- nki$Event
+  split.index <- createDataPartition(event, p = 0.7)$Resample1
+  gene.response <- as.matrix(nki[, 1:6])
+  
+  #Training and testing data set
+  nki.x.train <- gene.response[split.index,]
+  nki.x.test <- gene.response[-split.index,]
+  nki.y.train <- event[split.index]
+  nki.y.test <- event[-split.index]
+  
+  nki.train = nki[split.index,]
+  nki.test = nki[-split.index, ]
+  
+  nki.full <- glm(Event ~., data = nki.train, family = binomial(link = "logit"))
+  nki.null <- glm(Event ~ 1, data = nki.train, family = binomial(link = "logit"))
+  #Forward and backward models
+  nki.forward <- stepAIC(nki.null, scope=list(upper=nki.full),
+                         direction = "forward")
+  nki.backward <- stepAIC(nki.full, scope=list(upper=nki.null),
+                          direction = "backward")
+})})
 ```
+
+
+```{r}
+nki.forward$aic
+as.formula(nki.forward)
+nki.backward$aic
+as.formula(nki.backward)
+```
+
