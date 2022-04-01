@@ -19,6 +19,8 @@ library(kableExtra)
 library(pROC)
 library(corrplot)
 library(factoextra)
+library(lm.beta)
+library(gridExtra)
 ```
 
 ## Problem 1 (27 points)
@@ -54,9 +56,11 @@ biomarkers.y <- as.matrix(subset(train.breast, select = c(diagnosis)))
 ```{r}
 set.seed(984065)
 #Fitting ridge regression on training data
-fit.lasso <- cv.glmnet(biomarkers.x, biomarkers.y , alpha = 1, family = "binomial", type.measure = "auc")
+fit.lasso <- cv.glmnet(biomarkers.x, biomarkers.y , alpha = 1, 
+                       family = "binomial", type.measure = "auc")
 #Fitting lasso regression on training data
-fit.ridge <- cv.glmnet(biomarkers.x, biomarkers.y , alpha = 0, family = "binomial", type.measure = "auc")
+fit.ridge <- cv.glmnet(biomarkers.x, biomarkers.y , alpha = 0, 
+                       family = "binomial", type.measure = "auc")
 
 par(mfrow=c(1,2), mar=c(4,4,5,2))
 plot(fit.lasso, main="Lasso")
@@ -109,7 +113,8 @@ table <-data.table(model = c("Lasso.min", "Lasso.1se",
                                   ms.ridge.min, ms.ridge.1se),
                     AUC = c(AUC.lambdamin.lasso, AUC.lambda1se.lasso,
                             AUC.lambdamin.ridge, AUC.lambda1se.ridge))
-kable(table, caption = "Lambda values with its model size and AUC")
+kable(table, caption = "Lambda values with its model size and AUC") %>% 
+  kable_styling(latex_options = "hold_position")
 ```
 
 \newpage
@@ -120,22 +125,26 @@ Perform both backward (we'll later refer to this as model B) and forward (model 
 
 ### Answer
 
-```{r include=FALSE}
+```{r warning=FALSE}
 #Define full model and null model
-full.model <- glm(diagnosis~., data = train.breast)
-null.model <- glm(diagnosis~1, data = train.breast)
+train.breast <- train.breast[,-c(1)]
+full.model <- glm(diagnosis~., data = train.breast, family = "binomial")
+null.model <- glm(diagnosis~1, data = train.breast, family = "binomial")
 #perform 
-model.B<- stepAIC(full.model, direction = "back")
-model.S<- stepAIC(null.model, scope = list(upper = full.model), direction = "forward")
+model.B<- stepAIC(full.model, direction = "back", trace=FALSE)
+model.S<- stepAIC(null.model, scope = list(upper = full.model), 
+                  direction = "forward", trace=FALSE)
 ```
 
 The forward model takes a null model(which is a model without any feature) and only considers the intercept as a starting point and then progress towards the full model (with 30 features) by adding features. It can be seen here that the final model (forward) considers more features than the backward model. The forward model considers 15 features instead of 14 (in the backwards model)
 
 ```{r}
 #Computing coefficients of each model and tabulating it.
-B.coef <-model.B$coefficients
+# B.coef <-model.B$coefficients
+B.coef <- lm.beta(model.B)$standardized.coefficients
 B.order<- order(abs(B.coef), decreasing = TRUE)
-S.coef <-model.S$coefficients
+# S.coef <-model.S$coefficients
+S.coef <- lm.beta(model.S)$standardized.coefficients
 S.order<- order(abs(S.coef), decreasing = TRUE)
 table <- list(B.coef[B.order], S.coef[S.order])
 kable(table, col.names = "Coefficients", caption = "Coefficients of Model B and Model S") %>% 
@@ -151,11 +160,17 @@ Compare the goodness of fit of model B and model S in an appropriate way.
 ### Answer
 
 ```{r}
+cat("Model B AIC:", model.B$aic)
+cat("Model S AIC:", model.S$aic)
+```
+
+
+```{r}
 #Testing goodness of fit of model B and model S
-cat("Model B deviance: ", model.B$deviance)
-cat("Model S deviance: ", model.S$deviance)
-pchisq(model.B$null.deviance - model.B$deviance, df = 15, lower.tail = FALSE)
-pchisq(model.S$null.deviance - model.S$deviance, df = 15, lower.tail = FALSE)
+cat("Model B deviance:", model.B$deviance)
+cat("Model S deviance:", model.S$deviance)
+pchisq(model.B$null.deviance - model.B$deviance, df = 12, lower.tail = FALSE)
+pchisq(model.S$null.deviance - model.S$deviance, df = 14, lower.tail = FALSE)
 ```
 
 \newpage
@@ -166,13 +181,20 @@ Compute the training AUC for model B and model S.
 
 ### Answer
 
-```{r}
+```{r , error=FALSE, warning=FALSE, message=FALSE, fig.height= 4}
+invisible({capture.output({
 model.B.auc <- roc(train.breast$diagnosis, model.B$fitted.values, plot = TRUE, 
-    xlim = c(0,1), col="red")
+    xlim = c(0,1), col="red", main="ROC Curves on Training Set")
 model.S.auc <- roc(train.breast$diagnosis, model.S$fitted.values, plot = TRUE, 
     add = TRUE,col = "blue")
 legend("topright", legend = c("Model B", "Model S"),
          col = c("red", "blue"), lty = 1, cex = 0.8, bty = "n")
+})})
+dt <- data.table(c("Model B", "Model S"), 
+                    c(model.B.auc$auc, model.S.auc$auc))
+setnames(dt, c("Model","Accuracy") )
+kable(dt, caption = "Training Accuracy of Model B and Model S") %>%
+  kable_styling(latex_options = "hold_position")
 ```
 
 \newpage
@@ -183,8 +205,7 @@ Use the four models to predict the outcome for the observations in the test set 
 
 ### Answer
 
-```{r}
-
+```{r , error=FALSE, warning=FALSE, message=FALSE, fig.height=4}
 #Lasso model 
 lasso.pred <- predict(fit.lasso, newx = as.matrix(test.breast[,-c(1,2)]), s="lambda.1se")
 #Ridge Regression model 
@@ -194,19 +215,22 @@ B.pred <- predict(model.B, newdata = test.breast, type = "response")
 #Model S
 S.pred <- predict(model.S, newdata = test.breast, type = "response")
 #Plotting ROC
-lasso.auc <- roc(test.breast$diagnosis, lasso.pred, plot = TRUE, xlim = c(0,1), col = "red")$auc
+invisible({capture.output({
+lasso.auc <- roc(test.breast$diagnosis, lasso.pred, plot = TRUE, xlim = c(0,1), col = "red", main="ROC curves on Testing Set")$auc
 ridge.auc <- roc(test.breast$diagnosis, ridge.pred, plot = TRUE, col = "blue", add = TRUE)$auc
 B.auc <- roc(test.breast$diagnosis, B.pred, plot = TRUE, col = "green", add = TRUE)$auc
-S.auc <- roc(test.breast$diagnosis, S.pred, plot = TRUE, col = "yellow", add = TRUE)$auc
+S.auc <- roc(test.breast$diagnosis, S.pred, plot = TRUE, col = "orange", add = TRUE)$auc
 legend("topright", legend = c("Lasso", "Ridge","Model B","Model S"),
-         col = c("red", "blue", "green", "yellow"), lty = 1, cex = 0.8, bty = "n")
+         col = c("red", "blue", "green", "orange"), lty = 1, cex = 0.8, bty = "n")
+})})
 #Compare the AUCs 
 train.auc <- c(AUC.lambda1se.lasso, AUC.lambda1se.ridge, model.B.auc$auc, model.S.auc$auc)
 test.auc <- c(lasso.auc, ridge.auc, B.auc, S.auc)
 models <- c("Lasso Regression", "Ridge Regression", "Model B", "Model S")
 # We make a table and voila! 
 table <- data.table(models, train.auc, test.auc)
-kable(table, caption = "Training and Testing Acuraccy of each Model")
+kable(table, caption = "Training and Testing Acuraccy of each Model") %>%
+  kable_styling(latex_options = "hold_position")
 ```
 
 \newpage
@@ -241,20 +265,19 @@ Write function univ.glm.test \<- function(x, y, order = FALSE) where x is a data
 ```{r}
 univ.glm.test <- function(x, y, order = FALSE){
   stopifnot(nrow(x) == length(y))
-  output <- data.table("SNP"=character(), 
-                       "coefficients"=numeric(), "odds.ratios"=numeric(), 
-                       "std.error"=numeric(), "p.value"=numeric())
+  #predefine data table
+  output <- data.table("SNP" = character(), 
+                       "coefficients" = numeric(), "odds.ratios" = numeric(), 
+                       "std.error" = numeric(), "p.value" = numeric())
+  #run logistric regression on each SNP
   for (i in 1:ncol(x)){
     regr <- glm(y ~ x[[i]], family = binomial(link = "logit"))
     summarised <- coef(summary(regr))
-  ## remove the row corresponding to the intercept and the column containing
-  ## the t-value, then convert to a dataframe
     output <- rbind(output, list(names(x)[i], summarised[2,1],
                                  exp(summarised[2,1]), summarised[2,2],
                                  summarised[2,4]))
   }
-  ## assign better column names
-  # colnames(output) <- c("SNP", "Coefficients", "odds ratios", "std.error", "p.value")
+  #case when order set as TRUE
   if(order == TRUE){
     output <- output[order(p.value)]
   }
@@ -269,7 +292,9 @@ Using function univ.glm.test(), run an association study for all the SNPs in gdm
 ### Answer
 
 ```{r}
+#defining x with SNP values
 x <- gdm.dt[, 4:ncol(gdm.dt)]
+#defining y containing only pheno
 y <- gdm.dt[[3]]
 study <- univ.glm.test(x, y)
 kable(head(study), caption = "Logistic Regression on Pheno vs  each SNP") %>%
@@ -277,24 +302,26 @@ kable(head(study), caption = "Logistic Regression on Pheno vs  each SNP") %>%
 ```
 
 ```{r}
-index <- which(study$odds.ratio == max(study$odds.ratio))
+index <- which(study$p.value == min(study$p.value))
 kable(study[index, ], 
       caption=" most strongly associated to increased risk of gestational diabetes") %>% 
   kable_styling(full_width = F, position = "center", latex_options = "hold_position")
+strong.coef <- study[index, ]$coefficients
+strong.se <- study[index,]$std.error
+confidence.int.95 <- round(exp(strong.coef + 1.96 * strong.se*c(-1,1)), 3)
+confidence.int.99 <- round(exp(strong.coef + 2.576 * strong.se*c(-1,1)),3)
+cat(" SNP most strongly associated to increased risk of gestational     diabetes, ", 
+    "\n 95% Confidence Interval is", confidence.int.95, 
+    "\n 99% Confidence Interval is", confidence.int.99)
 ```
 
 ```{r}
-strong.coef <- study[index, ]$coefficients
-strong.se <- study[index,]$std.error
-
-confidence.int.95 <- round(exp(strong.coef + 1.96 * strong.se*c(-1,1)), 3)
-confidence.int.99 <- round(exp(strong.coef + 2.576 * strong.se*c(-1,1)),3)
-
 newindex <- which(study$odds.ratio < 1)
 best <- study[newindex,]
 # Select the SNP with lowest p value
 index3 <- which(best$p.value == min(best$p.value))
 best.SNP <- best[index3]
+
 kable(best.SNP, 
       caption= "most protective effect on gestational diabetes") %>% 
   kable_styling(full_width = F, position = "center", latex_options = "hold_position")
@@ -305,9 +332,6 @@ best.ci.95 <- round(exp(best.coef +1.96*best.se *c(-1,1)),3)
 best.ci.99 <- round(exp(best.coef +2.576*best.se *c(-1,1)),3)
 
 #Output
-cat(" SNP most strongly associated to increased risk of gestational     diabetes, ", 
-    "\n 95% Confidence Interval is", confidence.int.95, 
-    "\n 99% Confidence Interval is", confidence.int.99)
 cat("\n SNPs with most protective effect on gestational diabetes,", 
     "\n 95% Confidence Interval is", best.ci.95, 
     "\n 99% Confidence Interval is", best.ci.99)
@@ -338,15 +362,24 @@ kable(hit.snps[,c("SNP", "effect.allele","chrom","gene")],
 
 ```{r}
 hit.snp.window <- data.table()
-for (i in hit.snps$SNP){
-  idx <- which(hit.snps$SNP == i)
-  window.val <- merge.dt[(merge.dt$pos>= hit.snps$pos[idx] - 1e6) &
-                           (merge.dt$pos<= hit.snps$pos[idx] + 1e6)]
-  hit.snp.window <- rbind(hit.snp.window, window.val)
-}
-# Display the genes that fall within this window
-kable(data.table(hit.snp.window$gene), col.names = "gene", 
-      caption = "Gene within $1$Mb Windo") %>%
+idx <- which(hit.snps$SNP==hit.snps$SNP[1])
+window.val <- merge.dt[(merge.dt$pos>= hit.snps$pos[idx] - 1e6) &
+                         (merge.dt$pos<= hit.snps$pos[idx] + 1e6)]
+hit.snp.window <- rbind(hit.snp.window, window.val)
+caption <- paste("Gene within $1$Mb Window for",hit.snps$SNP[1])
+kable(unique(data.table(hit.snp.window$gene)), col.names = "gene", 
+      caption = caption) %>%
+  kable_styling(latex_options = "hold_position")
+```
+```{r}
+hit.snp.window <- data.table()
+idx <- which(hit.snps$SNP==hit.snps$SNP[2])
+window.val <- merge.dt[(merge.dt$pos>= hit.snps$pos[idx] - 1e6) &
+                         (merge.dt$pos<= hit.snps$pos[idx] + 1e6)]
+hit.snp.window <- rbind(hit.snp.window, window.val)
+caption <- paste("Gene within $1$Mb Window for",hit.snps$SNP[2])
+kable(unique(data.table(hit.snp.window$gene)), col.names = "gene", 
+      caption = caption) %>%
   kable_styling(latex_options = "hold_position")
 ```
 
@@ -358,25 +391,25 @@ Build a weighted genetic risk score that includes all SNPs with p-value $< 10^{-
 
 ```{r warning=FALSE}
 #Defining each weighted genetic risk score
-hit.snp.1 <- merge.dt[p.value<1e-4]
+hit.snp.1 <- merge.dt[p.value < 1e-4]
 gdm.1 <- gdm.dt[, .SD, .SDcols = merge.dt[p.value <1e-4]$full.snp]
-names(gdm.1) <- gsub("_.", "", x=names(gdm.1))
+names(gdm.1) <- gsub("_.", "", x = names(gdm.1))
 wgrs.1 <- as.matrix(gdm.1) %*% hit.snp.1$coefficients
 
-hit.snp.2 <- merge.dt[p.value<1e-3]
+hit.snp.2 <- merge.dt[p.value < 1e-3]
 gdm.2 <- gdm.dt[, .SD, .SDcols = merge.dt[p.value <1e-3]$full.snp]
-names(gdm.2) <- gsub("_.", "", x=names(gdm.2))
+names(gdm.2) <- gsub("_.", "", x = names(gdm.2))
 wgrs.2 <- as.matrix(gdm.2) %*% hit.snp.2$coefficients
 
 hit.snp.3 <- merge.dt[gene=="FTO"]
-gdm.3 <- gdm.dt[, .SD, .SDcols = merge.dt[gene=="FTO"]$full.snp]
-names(gdm.3) <- gsub("_.", "", x=names(gdm.3))
+gdm.3 <- gdm.dt[, .SD, .SDcols = merge.dt[gene == "FTO"]$full.snp]
+names(gdm.3) <- gsub("_.", "", x = names(gdm.3))
 wgrs.3 <- as.matrix(gdm.3) %*% hit.snp.3$coefficients
 
 #Adding 3 columns to gdm.dt
 scores <- c("score.1", "score.2", "score.3")
 gdm.dt <- gdm.dt %>% copy() %>% 
-  .[,`:=`(scores.1=wgrs.1, scores.2=wgrs.2, scores.3=wgrs.3)]
+  .[,`:=`(scores.1 = wgrs.1, scores.2 = wgrs.2, scores.3 = wgrs.3)]
 ```
 
 ```{r}
@@ -384,8 +417,8 @@ y <- gdm.dt[[3]]
 x <- gdm.dt[,180:182]
 wgrs.snp <- univ.glm.test(x, y)
 wgrs.snp <- wgrs.snp %>% 
-  .[,upper.conf.int:=round(exp(coefficients + 1.96 * std.error*-1), 3)] %>%
-  .[,lower.conf.int:=round(exp(coefficients + 1.96 * std.error), 3)] %>%
+  .[, lower.conf.int:=round(exp(coefficients + 1.96 * std.error*-1), 3)] %>%
+  .[, upper.conf.int:=round(exp(coefficients + 1.96 * std.error), 3)] %>%
   .[, !"coefficients"] %>% .[, !"std.error"]
 
 kable(head(wgrs.snp), caption = "Logistic regression on Pheno vs SNP") %>%
@@ -451,28 +484,43 @@ gdm.study <- setDT(fread("data_assignment2/GDM.study2.txt"))
 ```
 
 ```{r}
-are.equal <- gdm.study$effect.allele == new.study$effect.
-not.equal <- gdm.study$effect.allele != new.study$effect.
+gdm.study <- gdm.study[order(snp, effect.allele)]
+meta.study <- new.study[order(SNP, effect.allele)]
+are.equal <- gdm.study$effect.allele == meta.study$effect.allele
+not.equal <- gdm.study$other.allele == meta.study$effect.allele
 kable(table(are.equal, not.equal), caption = "Confusion Matrix") %>%
   kable_styling(latex_options = "hold_position")
 ```
 
 ```{r}
+false.removed <- which(are.equal == FALSE & not.equal==FALSE)
+meta.study <- meta.study[-false.removed]
+gdm.study <- gdm.study[-false.removed]
+are.equal <- are.equal[-false.removed]
+not.equal <- not.equal[-false.removed]
+```
+
+
+```{r warning=FALSE}
 beta1 <- gdm.study$beta
-beta2 <- new.study$coefficients
+beta2 <- meta.study$coefficients
 beta2[not.equal] <- -beta2[not.equal]
 
-weight1 <- 1/ gdm.study$se
-weight2 <- 1/ new.study$std.error
+weight1 <- 1/ gdm.study$se^2
+weight2 <- 1/ meta.study$std.error^2
 head(weight1)
 head(weight2)
 
-beta_meta_analysis = (weight1*beta1 + weight2*beta2)/(weight1 + weight2)
-standard_error_meta_analysis = sqrt(1 / weight1 + weight2)
-p_value_meta_analysis = 2*pnorm(abs(beta_meta_analysis / standard_error_meta_analysis), lower.tail = F)
-summary = merge(gdm.study, new.study, by.x = c("snp","effect.allele"),by.y=c("SNP","effect.allele"), all=TRUE)
-# [,c("snp", "effect.allele", "other.allele")]
-summary = cbind(summary, data.table(beta_meta_analysis = beta_meta_analysis, standard_error_meta_analysis = standard_error_meta_analysis, p.value= p_value_meta_analysis, odds.ratio = exp(beta_meta_analysis)))
+beta.meta = (weight1*beta1 + weight2*beta2)/(weight1 + weight2)
+se.meta = sqrt(1 / (weight1 + weight2))
+
+p.value.meta = 2 * pnorm(abs(beta.meta / se.meta), lower.tail = F)
+
+summary <- data.table(snp=meta.study$SNP, beta = beta.meta, std.error = se.meta, p.value = p.value.meta)
+summary
+summary <- summary[which(summary$p.value<1e-4),]
+summary <- summary[order(summary$p.value)]
+summary
 ```
 
 \newpage
@@ -521,19 +569,46 @@ Run PCA (only over the columns containing gene expressions), in order to derive 
 ### Answer
 
 ```{r warning=FALSE, fig.height=4}
+#conducting principal component analysis
 nki.pca<- prcomp(nki[,7:76], center=TRUE, scale = TRUE)
-nki.cumsum <- cumsum(nki.pca$sdev^2 / sum(nki.pca$sdev^2))
-plot(nki.pca, type="line", main="Scree Plot of 10 Principal Componenets",
+#Scree Plot for each Principal Components
+plot(nki.pca, type = "line", main = "Scree Plot of 10 Principal Componenets",
      ylim = c(0,20))
-plot(nki.cumsum, type="line", main="Cumulative Variance of Principal Components")
-abline(v = 6, col="red", lty=5)
-abline(v = 32, col="blue", lty=5)
-abline(h = 0.50, col="red", lty=5)
-abline(h = 0.90, col="blue", lty=5)
-legend("topleft", legend=c("Cut-off @ 0.50", "Cut-off @ 0.90"),
+#Percentage Variance explained by each Principal Components
+barplot(summary(nki.pca)$importance[2,], ylim = c(0, 0.25))
+#Cummulative Variance explained by each Principal Components
+nki.cumsum <- cumsum(nki.pca$sdev^2 / sum(nki.pca$sdev^2))
+plot(nki.cumsum, type = "line", main = "Cumulative Variance of Principal Components")
+abline(v = 5.8, col="red", lty=5); abline(v = 33, col="blue", lty=5)
+abline(h = 0.50, col="red", lty=5); abline(h = 0.90, col="blue", lty=5)
+legend("topleft", legend = c("Cut-off @ 0.50", "Cut-off @ 0.90"),
        col=c("red","blue"), lty=5, cex=0.6)
+```
 
-barplot(summary(nki.pca)$importance[2,], ylim=c(0, 0.25))
+```{r}
+pc <- nki.pca$x[,1:3]
+
+pc1.fit <- glm(nki$Event~pc[,1], family="binomial")
+pc2.fit <- glm(nki$Event~pc[,2], family="binomial")
+pc3.fit <- glm(nki$Event~pc[,3], family="binomial")
+
+pc1.fit.adj <- glm(nki$Event~pc[,1]+nki$EstrogenReceptor + nki$Grade + nki$Age, family="binomial")
+pc2.fit.adj <- glm(nki$Event~pc[,2]+nki$EstrogenReceptor + nki$Grade + nki$Age, family="binomial")
+pc3.fit.adj <- glm(nki$Event~pc[,3]+nki$EstrogenReceptor + nki$Grade + nki$Age, family="binomial")
+
+model <- c("Unadjusted PC1", "Unadjusted PC2", "Unadjusted PC3", "Adjusted PC1", "Adjusted PC2", "Adjusted PC3")
+coefficients <- c(pc1.fit$coefficients[2], pc2.fit$coefficients[2],
+                  pc3.fit$coefficients[2], pc1.fit.adj$coefficients[2],
+                  pc2.fit.adj$coefficients[2], pc3.fit.adj$coefficients[2])
+p.value <- c(summary(pc1.fit)$coefficients[2,4],
+             summary(pc2.fit)$coefficients[2,4], 
+             summary(pc3.fit)$coefficients[2,4],
+             summary(pc1.fit.adj)$coefficients[2,4],
+             summary(pc2.fit.adj)$coefficients[2,4],
+             summary(pc3.fit.adj)$coefficients[2,4])
+dt <- data.table(model, coefficients, p.value)
+kable(dt, caption="Association Test for each Principal Component") %>%
+  kable_styling(latex_options = "hold_position")
 ```
 
 \newpage
@@ -544,53 +619,132 @@ Use plots to compare with the correlation structure observed in problem 2.a and 
 
 ### Answer
 
-```{r warning=FALSE, fig.height=3.5}
-fviz_pca_ind(nki.pca, geom='point', habillage = nki$Event, axes = c(1,2),
+```{r warning=FALSE, fig.height=10}
+#Plotting PCA plot of each principal Component
+p1 <- fviz_pca_ind(nki.pca, geom='point', habillage = nki$Event, axes = c(1,2),
              addEllipses = T, palette="jco", legend.title="Diagnosis") +
-  ggtitle("2D PCA-plot") +
-  theme(plot.title = element_text(hjust = 0.5))
-fviz_pca_biplot(nki.pca, geom ='point', repel = T,col.var = "red") +
-  ggtitle("2D PCA-biplot") +
-  theme(plot.title = element_text(hjust = 0.5))
+  ggtitle("PCA-plot of PC1 vs PC2") + theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- fviz_pca_ind(nki.pca, geom='point', habillage = nki$Event, axes = c(2,3),
+             addEllipses = T, palette="jco", legend.title="Diagnosis") +
+  ggtitle("PCA-plot of PC2 vs PC3") + theme(plot.title = element_text(hjust = 0.5))
+
+p3 <- fviz_pca_ind(nki.pca, geom='point', habillage = nki$Event, axes = c(1,3),
+             addEllipses = T, palette="jco", legend.title="Diagnosis") +
+  ggtitle("PCA-plot of PC1 vs PC3") + theme(plot.title = element_text(hjust = 0.5))
+
+grid.arrange(p1,p2,p3)
 ```
+```{r warning=FALSE, fig.height=10}
+#plotting biplot for each Principal Component
+p1 <- fviz_pca_biplot(nki.pca, geom ='point', repel = T, col.var = "red", axes = c(1,2)) + 
+  ggtitle("PCA-biplot of PC1 vs PC2") + theme(plot.title = element_text(hjust = 0.5))
+p2 <- fviz_pca_biplot(nki.pca, geom ='point', repel = T, col.var = "red", axes = c(2,3)) + 
+  ggtitle("PCA-biplot of PC2 vs PC3") + theme(plot.title = element_text(hjust = 0.5))
+p3 <- fviz_pca_biplot(nki.pca, geom ='point', repel = T, col.var = "red", axes = c(1,3)) + 
+  ggtitle("PCA-biplot of PC1 vs PC2") + theme(plot.title = element_text(hjust = 0.5))
+grid.arrange(p1,p2,p3)
+```
+
 
 ### Problem 3.d (11 points)
 
 Based on the models we examined in the labs, fit an appropriate model with the aim to provide the most accurate prognosis you can for patients. Discuss and justify your decisions.
 
 ### Answer
+```{r}
+prepare.glmnet <- function(data, formula=~ .) {
+  ## create the design matrix to deal correctly with factor variables,
+  ## without losing rows containing NAs
+  old.opts <- options(na.action='na.pass')
+  x <- model.matrix(formula, data)
+  options(old.opts)
+  
+  ## remove the intercept column, as glmnet will add one by default
+  x <- x[, -match("(Intercept)", colnames(x))]
+  return(as.data.frame(x))
+}
+```
+
+```{r}
+nki.1hot <- prepare.glmnet(nki, ~.)
+```
 
 ```{r warning=FALSE}
 invisible({capture.output({
   set.seed(984065)
-  event <- nki$Event
-  split.index <- createDataPartition(event, p = 0.7)$Resample1
-  gene.response <- as.matrix(nki[, 1:6])
+  split.index <- createDataPartition(nki$Event, p = 0.7)$Resample1
+
+  nki.y.train <- nki$Event[split.index]
+  nki.y.test <- nki$Event[-split.index]
   
-  #Training and testing data set
-  nki.x.train <- gene.response[split.index,]
-  nki.x.test <- gene.response[-split.index,]
-  nki.y.train <- event[split.index]
-  nki.y.test <- event[-split.index]
+  nki.train <- nki.1hot[split.index,]
+  nki.test = nki.1hot[-split.index,]
   
-  nki.train = nki[split.index,]
-  nki.test = nki[-split.index, ]
-  
-  nki.full <- glm(Event ~., data = nki.train, family = binomial(link = "logit"))
-  nki.null <- glm(Event ~ 1, data = nki.train, family = binomial(link = "logit"))
+  nki.full <- glm(Event ~., data = nki.train, family = binomial)
+  nki.null <- glm(Event ~ 1, data = nki.train, family = binomial)
   #Forward and backward models
-  nki.forward <- stepAIC(nki.null, scope=list(upper=nki.full),
+  nki.forward <- stepAIC(nki.null, scope = list(upper = nki.full),
                          direction = "forward")
-  nki.backward <- stepAIC(nki.full, scope=list(upper=nki.null),
+  nki.backward <- stepAIC(nki.full, scope = list(upper = nki.null),
                           direction = "backward")
+  ms.backward <- length(nki.backward$anova$Deviance)-1
+  ms.forward <- length(nki.forward$anova$Deviance)-1
 })})
 ```
 
+```{r}
+set.seed(984065)
+#Fitting ridge regression on training data
+fit.lasso <- cv.glmnet(as.matrix(nki.train[,-c(1)]), nki.y.train, alpha = 1,
+                       family = "binomial", type.measure = "auc")
+#Fitting lasso regression on training data
+fit.ridge <- cv.glmnet(as.matrix(nki.train[,-c(1)]), nki.y.train, alpha = 0,
+                       family = "binomial", type.measure = "auc")
+lambda.lasso <- fit.lasso$lambda.min
+lambda.ridge <- fit.ridge$lambda.min
+lambda.lasso.idx <- which(lambda.lasso == fit.lasso$lambda)
+lambda.ridge.idx <- which(lambda.ridge == fit.ridge$lambda)
+lambda.lasso.auc <- signif(fit.lasso$cvm[lambda.lasso.idx],3)
+lambda.ridge.auc <- signif(fit.ridge$cvm[lambda.ridge.idx],3)
+ms.lasso <- fit.lasso$nzero[lambda.lasso.idx]
+ms.ridge <- fit.ridge$nzero[lambda.ridge.idx]
+```
+
+```{r , error=FALSE, warning=FALSE, message=FALSE, fig.height=4}
+invisible({capture.output({
+#Lasso model
+lasso.pred <- predict(fit.lasso, newx = as.matrix(nki.test[,-c(1)]), s="lambda.min")
+#Ridge Regression model
+ridge.pred <- predict(fit.ridge, newx = as.matrix(nki.test[,-c(1)]), s="lambda.min")
+#Model B
+backward.pred <- predict(nki.backward, newdata = nki.test, type = "response")
+#Model S
+forward.pred <- predict(nki.forward, newdata = nki.test, type = "response")  
+
+backward.auc <- roc(nki.y.test, backward.pred, plot = TRUE, xlim = c(0,1),
+                    col="red", main = "ROC Curves on Testing Set")
+forward.auc <- roc(nki.y.test, forward.pred, 
+                   plot = TRUE, add = TRUE, col = "blue")
+lasso.auc <- roc(nki.y.test, lasso.pred, 
+                   plot = TRUE, add = TRUE, col = "green")
+ridge.auc <- roc(nki.y.test, ridge.pred, 
+                   plot = TRUE, add = TRUE, col = "orange")
+legend("bottomleft", legend = c("Backward Stepwise", "Forward Stepwise", 
+                                "Lasso Regression", "Ridge Regression"),
+       col = c("red", "blue", "green", "orange"), 
+       lty = 1, cex = 0.8, bty = "n")
+})})
+```
 
 ```{r}
-nki.forward$aic
-as.formula(nki.forward)
-nki.backward$aic
-as.formula(nki.backward)
+model <- c("Backward Stepwise", "Forward Stepwise", 
+           "Lasso Regression", "Ridge Regression")
+auc.vals <- c(backward.auc$auc, forward.auc$auc, lasso.auc$auc, ridge.auc$auc)
+model.size <- c(ms.backward, ms.forward, ms.lasso, ms.ridge)
+dt <- data.table(model, auc.vals, model.size)
+kable(dt, caption="Accuracy of Models") %>%
+  kable_styling(latex_options = "hold_position")
 ```
+
 
