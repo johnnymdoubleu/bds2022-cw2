@@ -492,16 +492,14 @@ kable(table(are.equal, not.equal), caption = "Confusion Matrix") %>%
   kable_styling(latex_options = "hold_position")
 ```
 
-```{r}
+```{r warning=FALSE}
+#Remove two false values
 false.removed <- which(are.equal == FALSE & not.equal==FALSE)
 meta.study <- meta.study[-false.removed]
 gdm.study <- gdm.study[-false.removed]
 are.equal <- are.equal[-false.removed]
 not.equal <- not.equal[-false.removed]
-```
 
-
-```{r warning=FALSE}
 beta1 <- gdm.study$beta
 beta2 <- meta.study$coefficients
 beta2[not.equal] <- -beta2[not.equal]
@@ -511,13 +509,13 @@ weight2 <- 1/ meta.study$std.error^2
 head(weight1)
 head(weight2)
 
-beta.meta = (weight1*beta1 + weight2*beta2)/(weight1 + weight2)
-se.meta = sqrt(1 / (weight1 + weight2))
+beta.meta <- (weight1*beta1 + weight2*beta2)/(weight1 + weight2)
+se.meta <- sqrt(1 / (weight1 + weight2))
 
-p.value.meta = 2 * pnorm(abs(beta.meta / se.meta), lower.tail = F)
+p.value.meta <- 2 * pnorm(abs(beta.meta / se.meta), lower.tail = F)
 
-summary <- data.table(snp=meta.study$SNP, beta = beta.meta, std.error = se.meta, p.value = p.value.meta)
-summary
+summary <- data.table(snp=meta.study$SNP, beta = beta.meta, 
+                      std.error = se.meta, p.value = p.value.meta)
 summary <- summary[which(summary$p.value<1e-4),]
 summary <- summary[order(summary$p.value)]
 summary
@@ -540,10 +538,17 @@ nki <- read.csv("data_assignment2/nki.csv")
 ```
 
 ```{r}
+#calculating correlation between features
 nki.cor <- cor(nki[,7:76], use="pairwise.complete")
-corrplot(nki.cor, order="hclust", diag=FALSE, tl.col="black", tl.cex = 0.4, method = "square" , title="Correlation matrix (ordered by hierarchical clustering)", type = 'upper', mar=c(0,0,1,0))
+
+#computing correlation plot between features
+corrplot(nki.cor, order="hclust", diag=FALSE, tl.col="black", tl.cex = 0.4,
+         method = "square" , title="Correlation matrix (ordered by hierarchical clustering)", 
+         type = 'upper', mar=c(0,0,1,0))
 ```
+
 ```{r}
+#Computing genes that have coefficient > 0.8
 gene1 <- gene2 <- corr <- c()
 for (i in 1:nrow(nki.cor)){
   for (j in 1:ncol(nki.cor)){
@@ -555,8 +560,10 @@ for (i in 1:nrow(nki.cor)){
   }
 }
 
+#Defining table for list of pairs of genes with correlation > 0.8
 cor0.8 <- data.table(gene1, gene2, corr)
-kable(unique(cor0.8, by = "corr"), caption = "Correlation Coefficient $> 0.8$") %>%
+kable(unique(cor0.8, by = "corr"), 
+      caption = "List of pairs of Genes with Correlation Coefficient $> 0.8$") %>%
   kable_styling(latex_options = "hold_position")
 ```
 
@@ -570,12 +577,15 @@ Run PCA (only over the columns containing gene expressions), in order to derive 
 
 ```{r warning=FALSE, fig.height=4}
 #conducting principal component analysis
-nki.pca<- prcomp(nki[,7:76], center=TRUE, scale = TRUE)
+nki.pca <- prcomp(nki[,7:76], center=TRUE, scale = TRUE)
+
 #Scree Plot for each Principal Components
 plot(nki.pca, type = "line", main = "Scree Plot of 10 Principal Componenets",
      ylim = c(0,20))
+
 #Percentage Variance explained by each Principal Components
 barplot(summary(nki.pca)$importance[2,], ylim = c(0, 0.25))
+
 #Cummulative Variance explained by each Principal Components
 nki.cumsum <- cumsum(nki.pca$sdev^2 / sum(nki.pca$sdev^2))
 plot(nki.cumsum, type = "line", main = "Cumulative Variance of Principal Components")
@@ -586,16 +596,18 @@ legend("topleft", legend = c("Cut-off @ 0.50", "Cut-off @ 0.90"),
 ```
 
 ```{r}
-pc <- nki.pca$x[,1:3]
-
+pc <- nki.pca$x[,1:3] #retrieving the first 3 principal components
+#fitting logistic regression on each principal component
 pc1.fit <- glm(nki$Event~pc[,1], family="binomial")
 pc2.fit <- glm(nki$Event~pc[,2], family="binomial")
 pc3.fit <- glm(nki$Event~pc[,3], family="binomial")
 
+#fitting adjusted logistic regression on each principal component
 pc1.fit.adj <- glm(nki$Event~pc[,1]+nki$EstrogenReceptor + nki$Grade + nki$Age, family="binomial")
 pc2.fit.adj <- glm(nki$Event~pc[,2]+nki$EstrogenReceptor + nki$Grade + nki$Age, family="binomial")
 pc3.fit.adj <- glm(nki$Event~pc[,3]+nki$EstrogenReceptor + nki$Grade + nki$Age, family="binomial")
 
+#Define table for Association test for each principal component
 model <- c("Unadjusted PC1", "Unadjusted PC2", "Unadjusted PC3", "Adjusted PC1", "Adjusted PC2", "Adjusted PC3")
 coefficients <- c(pc1.fit$coefficients[2], pc2.fit$coefficients[2],
                   pc3.fit$coefficients[2], pc1.fit.adj$coefficients[2],
@@ -635,6 +647,7 @@ p3 <- fviz_pca_ind(nki.pca, geom='point', habillage = nki$Event, axes = c(1,3),
 
 grid.arrange(p1,p2,p3)
 ```
+
 ```{r warning=FALSE, fig.height=10}
 #plotting biplot for each Principal Component
 p1 <- fviz_pca_biplot(nki.pca, geom ='point', repel = T, col.var = "red", axes = c(1,2)) + 
@@ -666,28 +679,30 @@ prepare.glmnet <- function(data, formula=~ .) {
 }
 ```
 
-```{r}
-nki.1hot <- prepare.glmnet(nki, ~.)
-```
-
 ```{r warning=FALSE}
 invisible({capture.output({
   set.seed(984065)
+  #split dataset into training and testing
   split.index <- createDataPartition(nki$Event, p = 0.7)$Resample1
-
   nki.y.train <- nki$Event[split.index]
   nki.y.test <- nki$Event[-split.index]
   
+  #perform one-hot encoding
+  nki.1hot <- prepare.glmnet(nki, ~.)
   nki.train <- nki.1hot[split.index,]
-  nki.test = nki.1hot[-split.index,]
+  nki.test <- nki.1hot[-split.index,]
   
+  #define full and null model
   nki.full <- glm(Event ~., data = nki.train, family = binomial)
   nki.null <- glm(Event ~ 1, data = nki.train, family = binomial)
-  #Forward and backward models
+  
+  #Forward and backward stepwise models
   nki.forward <- stepAIC(nki.null, scope = list(upper = nki.full),
                          direction = "forward")
   nki.backward <- stepAIC(nki.full, scope = list(upper = nki.null),
                           direction = "backward")
+  
+  #model size of backward and forward stepwise model
   ms.backward <- length(nki.backward$anova$Deviance)-1
   ms.forward <- length(nki.forward$anova$Deviance)-1
 })})
@@ -695,33 +710,34 @@ invisible({capture.output({
 
 ```{r}
 set.seed(984065)
-#Fitting ridge regression on training data
+#Fitting Lasso and ridge regression on training data
 fit.lasso <- cv.glmnet(as.matrix(nki.train[,-c(1)]), nki.y.train, alpha = 1,
                        family = "binomial", type.measure = "auc")
-#Fitting lasso regression on training data
 fit.ridge <- cv.glmnet(as.matrix(nki.train[,-c(1)]), nki.y.train, alpha = 0,
                        family = "binomial", type.measure = "auc")
-lambda.lasso <- fit.lasso$lambda.min
-lambda.ridge <- fit.ridge$lambda.min
-lambda.lasso.idx <- which(lambda.lasso == fit.lasso$lambda)
-lambda.ridge.idx <- which(lambda.ridge == fit.ridge$lambda)
+
+#retrieve index of the lambda min for auc values
+lambda.lasso.idx <- which(fit.lasso$lambda.min == fit.lasso$lambda)
+lambda.ridge.idx <- which(fit.ridge$lambda.min == fit.ridge$lambda)
 lambda.lasso.auc <- signif(fit.lasso$cvm[lambda.lasso.idx],3)
 lambda.ridge.auc <- signif(fit.ridge$cvm[lambda.ridge.idx],3)
+
+#model size of Lasso and Ridge regression of lambda min
 ms.lasso <- fit.lasso$nzero[lambda.lasso.idx]
 ms.ridge <- fit.ridge$nzero[lambda.ridge.idx]
 ```
 
 ```{r , error=FALSE, warning=FALSE, message=FALSE, fig.height=4}
 invisible({capture.output({
-#Lasso model
+#Lasso and Ridge Regression model
 lasso.pred <- predict(fit.lasso, newx = as.matrix(nki.test[,-c(1)]), s="lambda.min")
-#Ridge Regression model
 ridge.pred <- predict(fit.ridge, newx = as.matrix(nki.test[,-c(1)]), s="lambda.min")
-#Model B
+
+#Backward and Forward Stepwise model
 backward.pred <- predict(nki.backward, newdata = nki.test, type = "response")
-#Model S
 forward.pred <- predict(nki.forward, newdata = nki.test, type = "response")  
 
+#Compute AUC values for each model
 backward.auc <- roc(nki.y.test, backward.pred, plot = TRUE, xlim = c(0,1),
                     col="red", main = "ROC Curves on Testing Set")
 forward.auc <- roc(nki.y.test, forward.pred, 
@@ -738,11 +754,12 @@ legend("bottomleft", legend = c("Backward Stepwise", "Forward Stepwise",
 ```
 
 ```{r}
-model <- c("Backward Stepwise", "Forward Stepwise", 
+#Defining the table for the accuracy and model size of each model
+Model <- c("Backward Stepwise", "Forward Stepwise", 
            "Lasso Regression", "Ridge Regression")
-auc.vals <- c(backward.auc$auc, forward.auc$auc, lasso.auc$auc, ridge.auc$auc)
+AUC <- c(backward.auc$auc, forward.auc$auc, lasso.auc$auc, ridge.auc$auc)
 model.size <- c(ms.backward, ms.forward, ms.lasso, ms.ridge)
-dt <- data.table(model, auc.vals, model.size)
+dt <- data.table(Model, AUC, model.size)
 kable(dt, caption="Accuracy of Models") %>%
   kable_styling(latex_options = "hold_position")
 ```
