@@ -206,14 +206,14 @@ Use the four models to predict the outcome for the observations in the test set 
 ### Answer
 
 ```{r , error=FALSE, warning=FALSE, message=FALSE, fig.height=4}
-#Lasso model 
+#prediction of Lasso and Ridge Regression Model
 lasso.pred <- predict(fit.lasso, newx = as.matrix(test.breast[,-c(1,2)]), s="lambda.1se")
-#Ridge Regression model 
 ridge.pred <- predict(fit.ridge, newx = as.matrix(test.breast[,-c(1,2)]), s="lambda.1se")
-#Model B
+
+#prediction of Model B and Model S
 B.pred <- predict(model.B, newdata = test.breast, type = "response")
-#Model S
 S.pred <- predict(model.S, newdata = test.breast, type = "response")
+
 #Plotting ROC
 invisible({capture.output({
 lasso.auc <- roc(test.breast$diagnosis, lasso.pred, plot = TRUE, xlim = c(0,1), col = "red", main="ROC curves on Testing Set")$auc
@@ -223,7 +223,8 @@ S.auc <- roc(test.breast$diagnosis, S.pred, plot = TRUE, col = "orange", add = T
 legend("topright", legend = c("Lasso", "Ridge","Model B","Model S"),
          col = c("red", "blue", "green", "orange"), lty = 1, cex = 0.8, bty = "n")
 })})
-#Compare the AUCs 
+
+#Tabulating AUC values 
 train.auc <- c(AUC.lambda1se.lasso, AUC.lambda1se.ridge, model.B.auc$auc, model.S.auc$auc)
 test.auc <- c(lasso.auc, ridge.auc, B.auc, S.auc)
 models <- c("Lasso Regression", "Ridge Regression", "Model B", "Model S")
@@ -296,8 +297,9 @@ Using function univ.glm.test(), run an association study for all the SNPs in gdm
 x <- gdm.dt[, 4:ncol(gdm.dt)]
 #defining y containing only pheno
 y <- gdm.dt[[3]]
+#performing logistic regression on each SNP
 study <- univ.glm.test(x, y)
-kable(head(study), caption = "Logistic Regression on Pheno vs  each SNP") %>%
+kable(head(study), caption = "Logistic Regression on Pheno vs each SNP") %>%
   kable_styling(latex_options = "hold_position")
 ```
 
@@ -319,8 +321,8 @@ cat(" SNP most strongly associated to increased risk of gestational     diabetes
 newindex <- which(study$odds.ratio < 1)
 best <- study[newindex,]
 # Select the SNP with lowest p value
-index3 <- which(best$p.value == min(best$p.value))
-best.SNP <- best[index3]
+idx <- which(best$p.value == min(best$p.value))
+best.SNP <- best[idx]
 
 kable(best.SNP, 
       caption= "most protective effect on gestational diabetes") %>% 
@@ -330,8 +332,6 @@ best.coef <- best.SNP$coefficients
 best.se <- best.SNP$std.error
 best.ci.95 <- round(exp(best.coef +1.96*best.se *c(-1,1)),3)
 best.ci.99 <- round(exp(best.coef +2.576*best.se *c(-1,1)),3)
-
-#Output
 cat("\n SNPs with most protective effect on gestational diabetes,", 
     "\n 95% Confidence Interval is", best.ci.95, 
     "\n 99% Confidence Interval is", best.ci.99)
@@ -347,20 +347,26 @@ Merge your GWAS results with the table of gene names provided in file GDM.annot.
 
 ```{r}
 gene.names <- fread("data_assignment2/GDM.annot.txt")
-# study
-# new.study <- study
+
+#spliting the string of snp into snp and effect.allele
 new.study <- study %>% copy() %>%
   .[, full.snp := SNP] %>%
   .[, c("SNP", "effect.allele") := do.call(Map, c(f = c, strsplit(SNP, "_")))]
 
+#merging dataset with gene.names and my study with snp
 merge.dt <- merge(new.study, gene.names, by.x = "SNP", by.y="snp", all = TRUE)
+
+#finding hit.snps that has p-value<1e-4
 hit.snps <- merge.dt[p.value<1e-4]
+
+#tabulating hit.snps
 kable(hit.snps[,c("SNP", "effect.allele","chrom","gene")], 
       caption= "SNPs that have p-value $< 10^{-4}$") %>% 
   kable_styling(latex_options = "hold_position")
 ```
 
 ```{r}
+#computing the gene list for 1st SNP that are within 1Mb window
 hit.snp.window <- data.table()
 idx <- which(hit.snps$SNP==hit.snps$SNP[1])
 window.val <- merge.dt[(merge.dt$pos>= hit.snps$pos[idx] - 1e6) &
@@ -372,10 +378,11 @@ kable(unique(data.table(hit.snp.window$gene)), col.names = "gene",
   kable_styling(latex_options = "hold_position")
 ```
 ```{r}
+#computing the gene list for 2nd SNP that are within 1Mb window
 hit.snp.window <- data.table()
-idx <- which(hit.snps$SNP==hit.snps$SNP[2])
-window.val <- merge.dt[(merge.dt$pos>= hit.snps$pos[idx] - 1e6) &
-                         (merge.dt$pos<= hit.snps$pos[idx] + 1e6)]
+idx <- which(hit.snps$SNP == hit.snps$SNP[2])
+window.val <- merge.dt[(merge.dt$pos >= hit.snps$pos[idx] - 1e6) &
+                         (merge.dt$pos <= hit.snps$pos[idx] + 1e6)]
 hit.snp.window <- rbind(hit.snp.window, window.val)
 caption <- paste("Gene within $1$Mb Window for",hit.snps$SNP[2])
 kable(unique(data.table(hit.snp.window$gene)), col.names = "gene", 
@@ -615,12 +622,16 @@ pc2.fit <- glm(nki$Event~pc[,2], family="binomial")
 pc3.fit <- glm(nki$Event~pc[,3], family="binomial")
 
 #fitting adjusted logistic regression on each principal component
-pc1.fit.adj <- glm(nki$Event~pc[,1]+nki$EstrogenReceptor + nki$Grade + nki$Age, family="binomial")
-pc2.fit.adj <- glm(nki$Event~pc[,2]+nki$EstrogenReceptor + nki$Grade + nki$Age, family="binomial")
-pc3.fit.adj <- glm(nki$Event~pc[,3]+nki$EstrogenReceptor + nki$Grade + nki$Age, family="binomial")
+pc1.fit.adj <- glm(nki$Event~pc[,1]+ nki$EstrogenReceptor + 
+                     nki$Grade + nki$Age, family="binomial")
+pc2.fit.adj <- glm(nki$Event~pc[,2]+ nki$EstrogenReceptor + 
+                     nki$Grade + nki$Age, family="binomial")
+pc3.fit.adj <- glm(nki$Event~pc[,3]+ nki$EstrogenReceptor + 
+                     nki$Grade + nki$Age, family="binomial")
 
 #Define table for Association test for each principal component
-model <- c("Unadjusted PC1", "Unadjusted PC2", "Unadjusted PC3", "Adjusted PC1", "Adjusted PC2", "Adjusted PC3")
+model <- c("Unadjusted PC1", "Unadjusted PC2", "Unadjusted PC3", 
+           "Adjusted PC1", "Adjusted PC2", "Adjusted PC3")
 coefficients <- c(pc1.fit$coefficients[2], pc2.fit$coefficients[2],
                   pc3.fit$coefficients[2], pc1.fit.adj$coefficients[2],
                   pc2.fit.adj$coefficients[2], pc3.fit.adj$coefficients[2])
