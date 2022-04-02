@@ -39,9 +39,9 @@ breast <- read.csv("data_assignment2/wdbc2.csv")
 
 ```{r}
 set.seed(984065)
-
+#redefining diagnosis from benign and malignant to 0 and 1
+breast$diagnosis <- ifelse(breast$diagnosis == "benign", 0, 1)
 #Splitting into training and testing data set
-breast$diagnosis <- ifelse(breast$diagnosis=="benign", 0, 1)
 split.index <- createDataPartition(breast$diagnosis, 
                                    p = .7, list = TRUE)$Resample1
 #train and test data sets
@@ -62,14 +62,14 @@ fit.lasso <- cv.glmnet(biomarkers.x, biomarkers.y , alpha = 1,
 fit.ridge <- cv.glmnet(biomarkers.x, biomarkers.y , alpha = 0, 
                        family = "binomial", type.measure = "auc")
 
+#plotting lambda values for Lasso and Ridge Regression
 par(mfrow=c(1,2), mar=c(4,4,5,2))
 plot(fit.lasso, main="Lasso")
-plot(fit.ridge, main="Ridge")                  
-```
+plot(fit.ridge, main="Ridge")
 
-```{r}
-cat("The optimal value of lambda is:", fit.ridge$lambda.min)
-cat("The optimal value of lambda is:", fit.lasso$lambda.min)
+#computing optimal lambda values for Lasso and Ridge Regression
+cat("The optimal value of lambda for Lasso is:", fit.ridge$lambda.min)
+cat("The optimal value of lambda for Ridge is:", fit.lasso$lambda.min)
 ```
 
 \newpage
@@ -81,29 +81,34 @@ Create a data table that for each value of 'lambda.min' and 'lambda.1se' for eac
 ### Answer
 
 ```{r}
-#retrieving lambda min from lasso and ridge
+#retrieving lambda min for Lasso and Ridge
 lambdamin.lasso <- fit.lasso$lambda.min
 lambdamin.ridge <- fit.ridge$lambda.min
-#Position of lambda min
-index_lambdamin.lasso <- which(lambdamin.lasso == fit.lasso$lambda)
-index_lambdamin.ridge <- which(lambdamin.ridge == fit.ridge$lambda)
-#retrieving lambda lse from lasso and ridge
+#retrieving the index of optimal lambda for Lasso and Ridge
+idx.lambdamin.lasso <- which(lambdamin.lasso == fit.lasso$lambda)
+idx.lambdamin.ridge <- which(lambdamin.ridge == fit.ridge$lambda)
+
+#retrieving lambda lse for Lasso and Ridge
 lambda1se.lasso <- fit.lasso$lambda.1se
 lambda1se.ridge <- fit.ridge$lambda.1se
-#Position of lambda lse 
-index_lambda1se.lasso <- which(lambda1se.lasso == fit.lasso$lambda)
-index_lambda1se.ridge <- which(lambda1se.ridge == fit.ridge$lambda)
-#AUC values of each lambda values
-AUC.lambdamin.lasso <- signif(fit.lasso$cvm[index_lambdamin.lasso],3)
-AUC.lambda1se.lasso <- signif(fit.lasso$cvm[index_lambda1se.lasso],3)
-AUC.lambdamin.ridge <- signif(fit.ridge$cvm[index_lambdamin.ridge],3)
-AUC.lambda1se.ridge <- signif(fit.ridge$cvm[index_lambda1se.ridge],3)
+#retrieving the index of lambda lse for Lasso and Ridge
+idx.lambda1se.lasso <- which(lambda1se.lasso == fit.lasso$lambda)
+idx.lambda1se.ridge <- which(lambda1se.ridge == fit.ridge$lambda)
+
+#Computing AUC values with the index 
+AUC.lambdamin.lasso <- signif(fit.lasso$cvm[idx.lambdamin.lasso],3)
+AUC.lambda1se.lasso <- signif(fit.lasso$cvm[idx.lambda1se.lasso],3)
+AUC.lambdamin.ridge <- signif(fit.ridge$cvm[idx.lambdamin.ridge],3)
+AUC.lambda1se.ridge <- signif(fit.ridge$cvm[idx.lambda1se.ridge],3)
+
 #Model size of each lambda values
-ms.lasso.min <- fit.lasso$nzero[index_lambdamin.lasso]
-ms.lasso.1se <- fit.lasso$nzero[index_lambda1se.lasso]
-ms.ridge.min <- fit.ridge$nzero[index_lambdamin.lasso]
-ms.ridge.1se <- fit.ridge$nzero[index_lambda1se.lasso]
-table <-data.table(model = c("Lasso.min", "Lasso.1se", 
+ms.lasso.min <- fit.lasso$nzero[idx.lambdamin.lasso]
+ms.lasso.1se <- fit.lasso$nzero[idx.lambda1se.lasso]
+ms.ridge.min <- fit.ridge$nzero[idx.lambdamin.lasso]
+ms.ridge.1se <- fit.ridge$nzero[idx.lambda1se.lasso]
+
+#tabulating model statistics for Lasso and Ridge
+dt <-data.table(model = c("Lasso.min", "Lasso.1se", 
                               "Ridge.min", "Ridge.1se"),
                     Lambda = c(signif(lambdamin.lasso,3),
                                signif(lambda1se.lasso,3),
@@ -113,7 +118,7 @@ table <-data.table(model = c("Lasso.min", "Lasso.1se",
                                   ms.ridge.min, ms.ridge.1se),
                     AUC = c(AUC.lambdamin.lasso, AUC.lambda1se.lasso,
                             AUC.lambdamin.ridge, AUC.lambda1se.ridge))
-kable(table, caption = "Lambda values with its model size and AUC") %>% 
+kable(dt, caption = "Lambda values with its model size and AUC") %>% 
   kable_styling(latex_options = "hold_position")
 ```
 
@@ -126,11 +131,12 @@ Perform both backward (we'll later refer to this as model B) and forward (model 
 ### Answer
 
 ```{r warning=FALSE}
-#Define full model and null model
+#define full model and null model
 train.breast <- train.breast[,-c(1)]
 full.model <- glm(diagnosis~., data = train.breast, family = "binomial")
 null.model <- glm(diagnosis~1, data = train.breast, family = "binomial")
-#perform 
+
+#perform forward and backward stepwise selection
 model.B<- stepAIC(full.model, direction = "back", trace=FALSE)
 model.S<- stepAIC(null.model, scope = list(upper = full.model), 
                   direction = "forward", trace=FALSE)
@@ -139,13 +145,13 @@ model.S<- stepAIC(null.model, scope = list(upper = full.model),
 The forward model takes a null model(which is a model without any feature) and only considers the intercept as a starting point and then progress towards the full model (with 30 features) by adding features. It can be seen here that the final model (forward) considers more features than the backward model. The forward model considers 15 features instead of 14 (in the backwards model)
 
 ```{r}
-#Computing coefficients of each model and tabulating it.
-# B.coef <-model.B$coefficients
+#Computing standardised regression coefficients of each model
 B.coef <- lm.beta(model.B)$standardized.coefficients
 B.order<- order(abs(B.coef), decreasing = TRUE)
-# S.coef <-model.S$coefficients
 S.coef <- lm.beta(model.S)$standardized.coefficients
 S.order<- order(abs(S.coef), decreasing = TRUE)
+
+#tabulating the model coefficients for backward and forward stepwise selection
 table <- list(B.coef[B.order], S.coef[S.order])
 kable(table, col.names = "Coefficients", caption = "Coefficients of Model B and Model S") %>% 
   kable_styling(latex_options = "hold_position")
@@ -160,6 +166,7 @@ Compare the goodness of fit of model B and model S in an appropriate way.
 ### Answer
 
 ```{r}
+#computing the AIC values of each model
 cat("Model B AIC:", model.B$aic)
 cat("Model S AIC:", model.S$aic)
 ```
@@ -184,15 +191,15 @@ Compute the training AUC for model B and model S.
 ```{r , error=FALSE, warning=FALSE, message=FALSE, fig.height= 4}
 invisible({capture.output({
 model.B.auc <- roc(train.breast$diagnosis, model.B$fitted.values, plot = TRUE, 
-    xlim = c(0,1), col="red", main="ROC Curves on Training Set")
+    xlim = c(0,1), col = "red", main = "ROC Curves on Training Set")
 model.S.auc <- roc(train.breast$diagnosis, model.S$fitted.values, plot = TRUE, 
-    add = TRUE,col = "blue")
+    add = TRUE, col = "blue")
 legend("topright", legend = c("Model B", "Model S"),
          col = c("red", "blue"), lty = 1, cex = 0.8, bty = "n")
 })})
 dt <- data.table(c("Model B", "Model S"), 
                     c(model.B.auc$auc, model.S.auc$auc))
-setnames(dt, c("Model","Accuracy") )
+setnames(dt, c("Model", "Accuracy") )
 kable(dt, caption = "Training Accuracy of Model B and Model S") %>%
   kable_styling(latex_options = "hold_position")
 ```
@@ -207,8 +214,8 @@ Use the four models to predict the outcome for the observations in the test set 
 
 ```{r , error=FALSE, warning=FALSE, message=FALSE, fig.height=4}
 #prediction of Lasso and Ridge Regression Model
-lasso.pred <- predict(fit.lasso, newx = as.matrix(test.breast[,-c(1,2)]), s="lambda.1se")
-ridge.pred <- predict(fit.ridge, newx = as.matrix(test.breast[,-c(1,2)]), s="lambda.1se")
+lasso.pred <- predict(fit.lasso, newx = as.matrix(test.breast[,-c(1,2)]), s = "lambda.1se")
+ridge.pred <- predict(fit.ridge, newx = as.matrix(test.breast[,-c(1,2)]), s = "lambda.1se")
 
 #prediction of Model B and Model S
 B.pred <- predict(model.B, newdata = test.breast, type = "response")
@@ -216,18 +223,24 @@ S.pred <- predict(model.S, newdata = test.breast, type = "response")
 
 #Plotting ROC
 invisible({capture.output({
-lasso.auc <- roc(test.breast$diagnosis, lasso.pred, plot = TRUE, xlim = c(0,1), col = "red", main="ROC curves on Testing Set")$auc
-ridge.auc <- roc(test.breast$diagnosis, ridge.pred, plot = TRUE, col = "blue", add = TRUE)$auc
-B.auc <- roc(test.breast$diagnosis, B.pred, plot = TRUE, col = "green", add = TRUE)$auc
-S.auc <- roc(test.breast$diagnosis, S.pred, plot = TRUE, col = "orange", add = TRUE)$auc
+lasso.auc <- roc(test.breast$diagnosis, lasso.pred, plot = TRUE, xlim = c(0,1),
+                 col = "red", main = "ROC curves on Testing Set")$auc
+ridge.auc <- roc(test.breast$diagnosis, ridge.pred, plot = TRUE, col = "blue",
+                 add = TRUE)$auc
+B.auc <- roc(test.breast$diagnosis, B.pred, plot = TRUE, col = "green", 
+             add = TRUE)$auc
+S.auc <- roc(test.breast$diagnosis, S.pred, plot = TRUE, col = "orange", 
+             add = TRUE)$auc
 legend("topright", legend = c("Lasso", "Ridge","Model B","Model S"),
          col = c("red", "blue", "green", "orange"), lty = 1, cex = 0.8, bty = "n")
 })})
 
 #Tabulating AUC values 
-train.auc <- c(AUC.lambda1se.lasso, AUC.lambda1se.ridge, model.B.auc$auc, model.S.auc$auc)
+train.auc <- c(AUC.lambda1se.lasso, AUC.lambda1se.ridge, 
+               model.B.auc$auc, model.S.auc$auc)
 test.auc <- c(lasso.auc, ridge.auc, B.auc, S.auc)
 models <- c("Lasso Regression", "Ridge Regression", "Model B", "Model S")
+
 # We make a table and voila! 
 table <- data.table(models, train.auc, test.auc)
 kable(table, caption = "Training and Testing Acuraccy of each Model") %>%
@@ -558,12 +571,12 @@ nki <- read.csv("data_assignment2/nki.csv")
 
 ```{r}
 #calculating correlation between features
-nki.cor <- cor(nki[,7:76], use="pairwise.complete")
+nki.cor <- cor(nki[,7:76], use = "pairwise.complete")
 
 #computing correlation plot between features
-corrplot(nki.cor, order="hclust", diag=FALSE, tl.col="black", tl.cex = 0.4,
-         method = "square" , title="Correlation matrix (ordered by hierarchical clustering)", 
-         type = 'upper', mar=c(0,0,1,0))
+corrplot(nki.cor, order = "hclust", diag = FALSE, tl.col = "black", 
+         tl.cex = 0.4, method = "square", type = 'upper', mar=c(0,0,1,0),
+         title="Correlation matrix (ordered by hierarchical clustering)")
 ```
 
 ```{r}
@@ -571,7 +584,7 @@ corrplot(nki.cor, order="hclust", diag=FALSE, tl.col="black", tl.cex = 0.4,
 gene1 <- gene2 <- corr <- c()
 for (i in 1:nrow(nki.cor)){
   for (j in 1:ncol(nki.cor)){
-    if (abs(nki.cor[i,j])>0.8 & nki.cor[i,j] !=1){
+    if (abs(nki.cor[i,j]) > 0.8 & nki.cor[i,j] != 1){
       gene1 <- c(gene1, rownames(nki.cor)[i])
       gene2 <- c(gene2, colnames(nki.cor)[j])
       corr <- c(corr, nki.cor[i,j])
@@ -596,7 +609,7 @@ Run PCA (only over the columns containing gene expressions), in order to derive 
 
 ```{r warning=FALSE, fig.height=4}
 #conducting principal component analysis
-nki.pca <- prcomp(nki[,7:76], center=TRUE, scale = TRUE)
+nki.pca <- prcomp(nki[,7:76], center = TRUE, scale = TRUE)
 
 #Scree Plot for each Principal Components
 plot(nki.pca, type = "line", main = "Scree Plot of 10 Principal Componenets",
