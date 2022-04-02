@@ -71,6 +71,7 @@ plot(fit.ridge, main="Ridge")
 cat("The optimal value of lambda for Lasso is:", fit.ridge$lambda.min)
 cat("The optimal value of lambda for Ridge is:", fit.lasso$lambda.min)
 ```
+The plot displays the mean cross-validated error in red with bars corresponding to standard errors. The leftmost dotted line in each plot corresponds to the $\lambda$ that minimizes the error (`lambda.min` in the fitted object); the dotted line to the right corresponds to the largest value of $\lambda$ such that the error is within one standard error from the minimum (`fit.lasso$lambda.1se` in the fitted object)
 
 \newpage
 
@@ -270,6 +271,8 @@ for (colnm in colnames(gdm.dt,-1)){
 }
 ```
 
+\newpage
+
 ### Problem 2.b (8 points)
 
 Write function univ.glm.test \<- function(x, y, order = FALSE) where x is a data table of SNPs, y is a binary outcome vector, and order is a boolean. The function should fit a logistic regression model for each SNP in x, and return a data table containing SNP names, regression coefficients, odds ratios, standard errors and p-values. If order is set to TRUE, the output data table should be ordered by increasing p-value.
@@ -299,6 +302,8 @@ univ.glm.test <- function(x, y, order = FALSE){
 }
 ```
 
+\newpage
+
 ### Problem 2.c (5 points)
 
 Using function univ.glm.test(), run an association study for all the SNPs in gdm.dt against having gestational diabetes (column "pheno"). For the SNP that is most strongly associated to increased risk of gestational diabetes and the one with most significant protective effect, report the summary statistics from the GWAS as well as the 95% and 99% confidence intervals on the odds ratio.
@@ -325,7 +330,7 @@ strong.coef <- study[index, ]$coefficients
 strong.se <- study[index,]$std.error
 confidence.int.95 <- round(exp(strong.coef + 1.96 * strong.se*c(-1,1)), 3)
 confidence.int.99 <- round(exp(strong.coef + 2.576 * strong.se*c(-1,1)),3)
-cat(" SNP most strongly associated to increased risk of gestational     diabetes, ", 
+cat(" SNP most strongly associated to increased risk of gestational diabetes, ", 
     "\n 95% Confidence Interval is", confidence.int.95, 
     "\n 99% Confidence Interval is", confidence.int.99)
 ```
@@ -333,6 +338,7 @@ cat(" SNP most strongly associated to increased risk of gestational     diabetes
 ```{r}
 newindex <- which(study$odds.ratio < 1)
 best <- study[newindex,]
+
 # Select the SNP with lowest p value
 idx <- which(best$p.value == min(best$p.value))
 best.SNP <- best[idx]
@@ -340,6 +346,7 @@ best.SNP <- best[idx]
 kable(best.SNP, 
       caption= "most protective effect on gestational diabetes") %>% 
   kable_styling(full_width = F, position = "center", latex_options = "hold_position")
+
 #Compute Confidence Interval
 best.coef <- best.SNP$coefficients
 best.se <- best.SNP$std.error
@@ -351,6 +358,8 @@ cat("\n SNPs with most protective effect on gestational diabetes,",
 ```
 
 We can see that SNP rs1423096_T has the highest odds ratio (1.91758) and hence is the most strongly associated to increased risk of gestational diabetes. In fact, this SNP increases the odds of having gestational diabetes by about 92!. The SNP with most significant protective effect is rs2237897_T and it reduced the risk of diabetes by about 35%.
+
+\newpage
 
 ### Problem 2.d (4points)
 
@@ -387,8 +396,7 @@ window.val <- merge.dt[(merge.dt$pos>= hit.snps$pos[idx] - 1e6) &
 hit.snp.window <- rbind(hit.snp.window, window.val)
 caption <- paste("Gene within $1$Mb Window for",hit.snps$SNP[1])
 kable(unique(data.table(hit.snp.window$gene)), col.names = "gene", 
-      caption = caption) %>%
-  kable_styling(latex_options = "hold_position")
+      caption = caption) %>% kable_styling(latex_options = "hold_position")
 ```
 ```{r}
 #computing the gene list for 2nd SNP that are within 1Mb window
@@ -399,9 +407,10 @@ window.val <- merge.dt[(merge.dt$pos >= hit.snps$pos[idx] - 1e6) &
 hit.snp.window <- rbind(hit.snp.window, window.val)
 caption <- paste("Gene within $1$Mb Window for",hit.snps$SNP[2])
 kable(unique(data.table(hit.snp.window$gene)), col.names = "gene", 
-      caption = caption) %>%
-  kable_styling(latex_options = "hold_position")
+      caption = caption) %>% kable_styling(latex_options = "hold_position")
 ```
+
+\newpage
 
 ### Problem 2.e (8 points)
 
@@ -447,6 +456,8 @@ kable(head(wgrs.snp), caption = "Logistic regression on Pheno vs Score") %>%
   kable_styling(latex_options = "hold_position")
 ```
 
+\newpage
+
 ### Problem 2.f (4 points)
 
 File GDM.test.txt (available from the accompanying zip folder on Learn) contains genotypes of another 40 pregnant women with and without gestational diabetes (assume that the reference allele is the same one that was specified in file GDM.raw.txt). Read the file into variable gdm.test. For the set of patients in gdm.test, compute the three genetic risk scores as defined in problem 2.e using the same set of SNPs and corresponding weights. Add the three scores as columns to gdm.test (hint: use the same columnnames as before).
@@ -475,6 +486,8 @@ gdm.test <- gdm.test %>% copy() %>%
   .[,`:=`(scores.1 = wgrs.test.1, scores.2 = wgrs.test.2, scores.3 = wgrs.test.3)]
 ```
 
+\newpage
+
 ### Problem 2.g (4 points)
 
 Use the logistic regression models fitted in problem 2.e to predict the outcome of patients in gdm.test. Compute the test log-likelihood for the predicted probabilities from the three genetic risk score models.
@@ -498,6 +511,8 @@ cat("The log likelihood of score 1:",
 cat("The log likelihood of score 1:",
     sum(gdm.test$pheno*log(pred.3)+(1-gdm.test$pheno)*log(1-pred.3)))
 ```
+
+\newpage
 
 ### Problem 2.h (4points)
 
@@ -535,11 +550,11 @@ beta2[not.equal] <- -beta2[not.equal]
 #compute weight
 weight1 <- 1/ gdm.study$se^2
 weight2 <- 1/ meta.study$std.error^2
-kable(head(weight1), caption = "Weight of $\texttt{gdm.study2}$") %>%
+kable(list(head(weight1), head(weight2)), caption = "Weight of Studies") %>%
   kable_styling(latex_options = "hold_position")
-kable(head(weight2), caption = "Weight of $\texttt{my.study}$") %>%
-  kable_styling(latex_options = "hold_position")
+```
 
+```{r}
 #meta analysis computing beta, std.error and p-value
 beta.meta <- (weight1*beta1 + weight2*beta2)/(weight1 + weight2)
 se.meta <- sqrt(1 / (weight1 + weight2))
@@ -550,8 +565,10 @@ summary <- data.table(snp=meta.study$SNP, beta = beta.meta,
                       std.error = se.meta, p.value = p.value.meta)
 summary <- summary[which(summary$p.value<1e-4),]
 summary <- summary[order(summary$p.value)]
-summary
+kable(summary, caption = "Summary of the study with p-value$<1e-4$") %>%
+  kable_styling(latex_options = "hold_position")
 ```
+
 
 \newpage
 
@@ -630,17 +647,17 @@ legend("topleft", legend = c("Cut-off @ 0.50", "Cut-off @ 0.90"),
 ```{r}
 pc <- nki.pca$x[,1:3] #retrieving the first 3 principal components
 #fitting logistic regression on each principal component
-pc1.fit <- glm(nki$Event~pc[,1], family="binomial")
-pc2.fit <- glm(nki$Event~pc[,2], family="binomial")
-pc3.fit <- glm(nki$Event~pc[,3], family="binomial")
+pc1.fit <- glm(nki$Event~pc[,1], family = "binomial")
+pc2.fit <- glm(nki$Event~pc[,2], family = "binomial")
+pc3.fit <- glm(nki$Event~pc[,3], family = "binomial")
 
 #fitting adjusted logistic regression on each principal component
 pc1.fit.adj <- glm(nki$Event~pc[,1]+ nki$EstrogenReceptor + 
-                     nki$Grade + nki$Age, family="binomial")
+                     nki$Grade + nki$Age, family = "binomial")
 pc2.fit.adj <- glm(nki$Event~pc[,2]+ nki$EstrogenReceptor + 
-                     nki$Grade + nki$Age, family="binomial")
+                     nki$Grade + nki$Age, family = "binomial")
 pc3.fit.adj <- glm(nki$Event~pc[,3]+ nki$EstrogenReceptor + 
-                     nki$Grade + nki$Age, family="binomial")
+                     nki$Grade + nki$Age, family = "binomial")
 
 #Define table for Association test for each principal component
 model <- c("Unadjusted PC1", "Unadjusted PC2", "Unadjusted PC3", 
@@ -669,18 +686,18 @@ Use plots to compare with the correlation structure observed in problem 2.a and 
 
 ```{r warning=FALSE, fig.height=10}
 #Plotting PCA plot of each principal Component
-p1 <- fviz_pca_ind(nki.pca, geom='point', habillage = nki$Event, axes = c(1,2),
-             addEllipses = T, palette="jco", legend.title="Diagnosis") +
+p1 <- fviz_pca_ind(nki.pca, geom = 'point', habillage = nki$Event, 
+                   axes = c(1,2), addEllipses = T, palette = "jco",
+                   legend.title = "Diagnosis") +
   ggtitle("PCA-plot of PC1 vs PC2") + theme(plot.title = element_text(hjust = 0.5))
 
-p2 <- fviz_pca_ind(nki.pca, geom='point', habillage = nki$Event, axes = c(2,3),
+p2 <- fviz_pca_ind(nki.pca, geom = 'point', habillage = nki$Event, axes = c(2,3),
              addEllipses = T, palette="jco", legend.title="Diagnosis") +
   ggtitle("PCA-plot of PC2 vs PC3") + theme(plot.title = element_text(hjust = 0.5))
 
 p3 <- fviz_pca_ind(nki.pca, geom='point', habillage = nki$Event, axes = c(1,3),
              addEllipses = T, palette="jco", legend.title="Diagnosis") +
   ggtitle("PCA-plot of PC1 vs PC3") + theme(plot.title = element_text(hjust = 0.5))
-
 grid.arrange(p1,p2,p3)
 ```
 
@@ -695,6 +712,7 @@ p3 <- fviz_pca_biplot(nki.pca, geom ='point', repel = T, col.var = "red", axes =
 grid.arrange(p1,p2,p3)
 ```
 
+\newpage
 
 ### Problem 3.d (11 points)
 
@@ -708,14 +726,13 @@ prepare.glmnet <- function(data, formula=~ .) {
   old.opts <- options(na.action='na.pass')
   x <- model.matrix(formula, data)
   options(old.opts)
-  
   ## remove the intercept column, as glmnet will add one by default
   x <- x[, -match("(Intercept)", colnames(x))]
   return(as.data.frame(x))
 }
 ```
 
-```{r warning=FALSE}
+```{r , error=FALSE, warning=FALSE, message=FALSE}
 invisible({capture.output({
   set.seed(984065)
   #split dataset into training and testing
@@ -775,7 +792,7 @@ forward.pred <- predict(nki.forward, newdata = nki.test, type = "response")
 
 #Compute AUC values for each model
 backward.auc <- roc(nki.y.test, backward.pred, plot = TRUE, xlim = c(0,1),
-                    col="red", main = "ROC Curves on Testing Set")
+                    col = "red", main = "ROC Curves on Testing Set")
 forward.auc <- roc(nki.y.test, forward.pred, 
                    plot = TRUE, add = TRUE, col = "blue")
 lasso.auc <- roc(nki.y.test, lasso.pred, 
