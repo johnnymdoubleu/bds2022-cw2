@@ -630,6 +630,12 @@ kable(unique(cor0.8, by = "corr"),
   kable_styling(latex_options = "hold_position")
 ```
 
+We computed the correlation between the features, and displayed as a correlation matrix with a block structure being highlighted with respect to its correlation coefficients. We can see that the blue parts represent a positive correlation where most of this is found in the region between the correlation of between the region of `DIAPH3`-`RFC4`. However, we observed negative correlation between the region of `STK32B`-`PECI.1` to `DIAPH3`-`RFC4`. Furthermore the positive and negative correlation is spread through the correlation matrix.
+
+We also computed the genes that have high correlation among each other. Interestingly, `DIAP3` is highly correlated to `DIAPH3.1` and `DIAPH3.2`. This is self-explanatory as `DIAP3` is the prefix. Similar observation is reported for `PECI` and `IFGBP5`. The correlation between `IFGBP5` and `IFGBP5.1` is $0.9775030$ which is the strongest positive correlation while others are less than $0.9$.
+
+
+
 \newpage
 
 ### Problem 3.b (8 points)
@@ -638,26 +644,32 @@ Run PCA (only over the columns containing gene expressions), in order to derive 
 
 ### Answer
 
-```{r warning=FALSE, fig.height=4}
+```{r warning=FALSE, fig.height=3.7}
 #conducting principal component analysis
 nki.pca <- prcomp(nki[,7:76], center = TRUE, scale = TRUE)
 
-#Scree Plot for each Principal Components
+#Scree Plot for each Principal Component
 plot(nki.pca, type = "line", main = "Scree Plot of 10 Principal Componenets",
-     ylim = c(0,20))
-
-#Percentage Variance explained by each Principal Components
-barplot(summary(nki.pca)$importance[2,], ylim = c(0, 0.25))
-
-#Cummulative Variance explained by each Principal Components
-nki.cumsum <- cumsum(nki.pca$sdev^2 / sum(nki.pca$sdev^2))
-plot(nki.cumsum, type = "line", main = "Cumulative Variance of Principal Components")
-abline(v = 5.8, col="red", lty=5); abline(v = 33, col="blue", lty=5)
-abline(h = 0.50, col="red", lty=5); abline(h = 0.90, col="blue", lty=5)
-legend("topleft", legend = c("Cut-off @ 0.50", "Cut-off @ 0.90"),
-       col=c("red","blue"), lty=5, cex=0.6)
+     ylim = c(0, 20))
 ```
+We conducted principal component analysis using `prcomp()`. To visualise the principal components and its variance, we plot the screen plot. We can see that the first principal component takes up the most variance as the gradient is the steepest. From the next component, we can see that the gradient become gentle. After component 3, we observe that the gradient does not change significantly. From here we may think that using 3 principal component is sufficient for the analysis. To further validate this, let use compute the percentage variance explained and cumulative variance explained by each principal component.
 
+```{r warning=FALSE, fig.height=3.7}
+#Percentage Variance explained by each Principal Component
+barplot(summary(nki.pca)$importance[2,], ylim = c(0, 0.25), 
+        xlab = "Principal Component", ylab = "Percentage Variance Explained",
+        main = "Percentage Variance of Principal Components")
+
+#Cumulative Variance explained by each Principal Component
+plot(cumsum(nki.pca$sdev^2 / sum(nki.pca$sdev^2)), type = "line", 
+     xlab = "Principal Component", ylab = "Cumulative Variance Explained",
+     main = "Cumulative Variance of Principal Components")
+abline(v = 5.8, col="red", lty=5); abline(v = 33, col = "blue", lty = 5)
+abline(h = 0.50, col="red", lty=5); abline(h = 0.90, col = "blue", lty = 5)
+legend("topleft", legend = c("Cut-off @ 0.50", "Cut-off @ 0.90"),
+       col = c("red","blue"), lty = 5, cex = 0.6)
+```
+Looking at the two plots above, we can see that the first component has the highest percentage variance explained and the percentage explained is $24.2\%$. The next components adds up to $31.8\%$ and $37.7\%$ respectively from the percentage variance explained and cumulative variance explained plot. From the 4th component, we see that the percentage increase is much smaller compared to the first three components. As a result, we will chose the first three components to continue our analysis.
 ```{r}
 pc <- nki.pca$x[,1:3] #retrieving the first 3 principal components
 #fitting logistic regression on each principal component
@@ -673,7 +685,7 @@ pc2.fit.adj <- glm(nki$Event~pc[,2]+ nki$EstrogenReceptor +
 pc3.fit.adj <- glm(nki$Event~pc[,3]+ nki$EstrogenReceptor + 
                      nki$Grade + nki$Age, family = "binomial")
 
-#Define table for Association test for each principal component
+#tabulating for Association test for each principal component
 model <- c("Unadjusted PC1", "Unadjusted PC2", "Unadjusted PC3", 
            "Adjusted PC1", "Adjusted PC2", "Adjusted PC3")
 coefficients <- c(pc1.fit$coefficients[2], pc2.fit$coefficients[2],
@@ -686,9 +698,11 @@ p.value <- c(summary(pc1.fit)$coefficients[2,4],
              summary(pc2.fit.adj)$coefficients[2,4],
              summary(pc3.fit.adj)$coefficients[2,4])
 dt <- data.table(model, coefficients, p.value)
-kable(dt, caption="Association Test for each Principal Component") %>%
+kable(dt, caption = "Association Test for each Principal Component") %>%
   kable_styling(latex_options = "hold_position")
 ```
+We conducted logistic regression for both unadjusted and adjusted model. The unadjusted model only contains each principal component whereas the adjusted model includes other variables such as `age`, `Grade` and `EstrogrenReceptor`. From it, we can see that p-values for the first and third components in unadjusted component are $0.00943$ and $0.00863$.
+
 
 \newpage
 
@@ -700,8 +714,8 @@ Use plots to compare with the correlation structure observed in problem 2.a and 
 
 ```{r warning=FALSE, fig.height=10}
 #Plotting PCA plot of each principal Component
-p1 <- fviz_pca_ind(nki.pca, geom = 'point', habillage = nki$Event, 
-                   axes = c(1,2), addEllipses = T, palette = "jco",
+p1 <- fviz_pca_ind(nki.pca, geom = 'point', habillage = nki$Event, axes = c(1,2), 
+                   addEllipses = T, palette = "jco",
                    legend.title = "Diagnosis") +
   ggtitle("PCA-plot of PC1 vs PC2") + theme(plot.title = element_text(hjust = 0.5))
 
