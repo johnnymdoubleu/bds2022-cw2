@@ -669,7 +669,7 @@ abline(h = 0.50, col="red", lty=5); abline(h = 0.90, col = "blue", lty = 5)
 legend("topleft", legend = c("Cut-off @ 0.50", "Cut-off @ 0.90"),
        col = c("red","blue"), lty = 5, cex = 0.6)
 ```
-Looking at the two plots above, we can see that the first component has the highest percentage variance explained and the percentage explained is $24.2\%$. The next components adds up to $31.8\%$ and $37.7\%$ respectively from the percentage variance explained and cumulative variance explained plot. From the 4th component, we see that the percentage increase is much smaller compared to the first three components. As a result, we will chose the first three components to continue our analysis.
+Looking at the two plots above, we can see that the first component has the highest percentage variance explained and the percentage explained is $24.2\%$. The next components adds up to $31.8\%$ and $37.7\%$ respectively from the percentage variance explained and cumulative variance explained plot. From the 4th component, we see that the increase in percentage is much smaller compared to the first three components. As a result, we will chose the first three components to continue our analysis with its visualisation in the next part.
 ```{r}
 pc <- nki.pca$x[,1:3] #retrieving the first 3 principal components
 #fitting logistic regression on each principal component
@@ -701,7 +701,7 @@ dt <- data.table(model, coefficients, p.value)
 kable(dt, caption = "Association Test for each Principal Component") %>%
   kable_styling(latex_options = "hold_position")
 ```
-We conducted logistic regression for both unadjusted and adjusted model. The unadjusted model only contains each principal component whereas the adjusted model includes other variables such as `age`, `Grade` and `EstrogrenReceptor`. From it, we can see that p-values for the first and third components in unadjusted component are $0.00943$ and $0.00863$.
+We conducted logistic regression for both unadjusted and adjusted model. The unadjusted model only contains each principal component whereas the adjusted model includes other variables such as `age`, `Grade` and `EstrogrenReceptor`. From it, we can see that p-values for the first and third components in unadjusted model are $0.00943$ and $0.00863$ and they can be considered significant. For the adjusted model, only the third component is significant with the value of $0.0245$. Thus, the unadjusted model has 2 components and adjusted model has 1 component that are significant. However, if we revisit the cumulative variance explained plot, we can see that the 3 components can only explain $37.6\%$ of the variance. As a result we can infer that PCA is not so helpful in this model.
 
 
 \newpage
@@ -728,6 +728,10 @@ p3 <- fviz_pca_ind(nki.pca, geom='point', habillage = nki$Event, axes = c(1,3),
   ggtitle("PCA-plot of PC1 vs PC3") + theme(plot.title = element_text(hjust = 0.5))
 grid.arrange(p1,p2,p3)
 ```
+Now we plot the principal components against each other for the selected first three components. We first analyse the scatter plot against each component using `fviz_pca_ind()`. 
+
+The datapoints in the above plot are the individual counties. They were artificially grouped and coloured by quartile. The x-axis in the first plot is the first principle component and the value between brackets is the proportion of the variance it explains. The y-axis in the first graph is the second component and in the second graph the counties are projected on the plane formed by the second and third components. The ellipses contain 95% of the data in each group around a centroid which is indicated by a slightly larger datapoint. Looking at both graphs we can see that the ellipses overlap. This isn’t entirely surprising as deathrate is a continuous variable which we grouped artificially. To overcome this we could just look at the largest and lowest quartiles. Furthermore, each component simply describes the variation in a dataset. A dataset which contains a few variables that are associated with our outcome of interest and a lot more variables that aren’t won’t be very good at separating individual observations of the outcome. This isn’t entirely the case with our dataset as while the elipses overlap, for the first two principal components they do separate slightly in the right order along the x and y axes. If you look closely you might see that the centroids are separated in the right order along the x-axis for the first principal component and marginally so along the y-axis for the second principal component. However, in the second graph the ellipses completely overlap. Removing a few variables which weren’t associated with our outcome of interest in the correlation matrix may help improve matters. Finally, so far we have not cleaned our data at all. The first two components contain the largest variation in our data it is therefore a good idea t examine the subset of most extreme values for the first two components as they are likely to contain outliers.
+
 
 ```{r warning=FALSE, fig.height=10}
 #plotting biplot for each Principal Component
@@ -739,6 +743,10 @@ p3 <- fviz_pca_biplot(nki.pca, geom ='point', repel = T, col.var = "red", axes =
   ggtitle("PCA-biplot of PC1 vs PC2") + theme(plot.title = element_text(hjust = 0.5))
 grid.arrange(p1,p2,p3)
 ```
+
+We
+
+
 
 \newpage
 
