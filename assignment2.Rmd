@@ -42,8 +42,7 @@ set.seed(984065)
 #redefining diagnosis from benign and malignant to 0 and 1
 breast$diagnosis <- ifelse(breast$diagnosis == "benign", 0, 1)
 #Splitting into training and testing data set
-split.index <- createDataPartition(breast$diagnosis, 
-                                   p = .7, list = TRUE)$Resample1
+split.index <- createDataPartition(breast$diagnosis, p = .7, list = TRUE)$Resample1
 #train and test data sets
 train.breast <- breast[split.index, ]
 test.breast <- breast[-split.index, ]
@@ -113,10 +112,8 @@ ms.ridge.1se <- fit.ridge$nzero[idx.lambda1se.lasso]
 #tabulating model statistics for Lasso and Ridge
 dt <-data.table(model = c("Lasso.min", "Lasso.1se", 
                               "Ridge.min", "Ridge.1se"),
-                    Lambda = c(signif(lambdamin.lasso,3),
-                               signif(lambda1se.lasso,3),
-                               signif(lambdamin.ridge,3),
-                               signif(lambda1se.ridge,3)), 
+                    Lambda = c(signif(lambdamin.lasso,3), signif(lambda1se.lasso,3),
+                               signif(lambdamin.ridge,3), signif(lambda1se.ridge,3)), 
                     ModelSize = c(ms.lasso.min, ms.lasso.1se, 
                                   ms.ridge.min, ms.ridge.1se),
                     AUC = c(AUC.lambdamin.lasso, AUC.lambda1se.lasso,
@@ -124,7 +121,7 @@ dt <-data.table(model = c("Lasso.min", "Lasso.1se",
 kable(dt, caption = "Lambda values with its model size and AUC") %>%
   kable_styling(full_width = F, position = "center", latex_options = "hold_position")
 ```
-The $\lambda$ is a penalty parameter that shrinks the coefficient to zero for Lasso and near zero for Ridge. This is the reason why, Lasso has a smaller model size compared to Ridge regression. Thus, Lasso with $\lambda=0.0298$ will have model size of $8$ and Ridge with $\lambda=0.0368$ will have model size of $30$ (unchanged). Looking at Table 1. we can see that `lambda.min` for both Lasso and Ridge regression have low AUC values compared to `lambda.1se`. This is because, the `lambda.min` values maximises the AUC values and minimises the error. Then, we compare the model accuracy among Lasso and Ridge. Lasso has the AUC value of $0.981$ and Ridge has $0.983$. From this, Ridge regression represents the training dataset better than Lasso. 
+$\lambda$ is a penalty parameter that shrinks the coefficient to zero for Lasso and near zero for Ridge. This is the reason why, Lasso has a smaller model size compared to Ridge regression. From Table 1, Lasso with $\lambda=0.0298$ will have model size of $8$ and Ridge with $\lambda=0.0368$ will have model size of $30$ (unchanged). Looking at Table 1. we can see that `lambda.min` for both Lasso and Ridge regression have low AUC values compared to `lambda.1se`. This is because, the `lambda.min` values maximises the AUC values and minimises the error. Then, we compare the model accuracy among Lasso and Ridge. Lasso has the AUC value of $0.981$ and Ridge has $0.983$. From this, Ridge regression represents the training dataset better than Lasso. 
 
 \newpage
 
@@ -405,9 +402,11 @@ kable(hit.snps[,c("SNP", "effect.allele","chrom","gene")],
   kable_styling(latex_options = "hold_position")
 ```
 
-```{r}
-merge.dt <- merge.dt %>% copy() %>% .[, pos := as.numeric(pos)] %>%
-  .[, cum.pos := cumsum(pos)] %>% .[, chrom := as.numeric(chrom)]
+```{r warning=FALSE}
+merge.dt <- merge.dt %>% copy() %>% 
+  .[, pos := as.numeric(pos)] %>%
+  .[, cum.pos := cumsum(pos)] %>% 
+  .[, chrom := as.numeric(chrom)]
 chrom.cols <- 1 + merge.dt$chrom %% 2 # 1 for even, 2 for odd chromosomes
 with(merge.dt, plot(cum.pos, -log10(p.value), col = chrom.cols, pch = 20, 
                     cex = 0.8, main = "Manhattan plot", xlab = "Positions"))
@@ -421,21 +420,26 @@ window.val <- merge.dt[(merge.dt$pos>= hit.snps$pos[idx] - 1e6) &
                          (merge.dt$pos<= hit.snps$pos[idx] + 1e6)]
 hit.snp.window <- rbind(hit.snp.window, window.val)
 caption <- paste("Gene within $1$Mb Window for",hit.snps$SNP[1])
-kable(unique(data.table(hit.snp.window$gene)), col.names = "gene", 
+kable(unique(data.table(hit.snp.window$gene)), col.names = "Gene", 
       caption = caption) %>% kable_styling(latex_options = "hold_position")
 ```
 
 ```{r}
 #computing the gene list for 2nd SNP that are within 1Mb window
+
 hit.snp.window <- data.table()
 idx <- which(hit.snps$SNP == hit.snps$SNP[2])
 window.val <- merge.dt[(merge.dt$pos >= hit.snps$pos[idx] - 1e6) &
                          (merge.dt$pos <= hit.snps$pos[idx] + 1e6)]
 hit.snp.window <- rbind(hit.snp.window, window.val)
 caption <- paste("Gene within $1$Mb Window for",hit.snps$SNP[2])
-kable(unique(data.table(hit.snp.window$gene)), col.names = "gene", 
+kable(unique(data.table(hit.snp.window$gene)), col.names = "Gene", 
       caption = caption) %>% kable_styling(latex_options = "hold_position")
 ```
+
+In Table 8, we have `SNP`s that have p-value less than $1e-4$. The `SNP` names are `rs12243326_A` and `rs2237897_T` and we will denote them as `hit SNP`. They have chromosome number of $10$ and $11$ and gene of `TCF7L2` and `KCNQ1` repectively. This is further evident in the auxiliary Manhatten plot we have above where the points are located above the red dotted lines.
+
+Then we further computed the genes within $1Mb$ window for each `SNP` in Table 9 and Table 10 repectively. Thus, those patient with mutation in the proposed genes in Table 9 and Table 10, have higher chance of being diagnosed with malignant tumour.
 
 \newpage
 
@@ -483,6 +487,10 @@ kable(head(wgrs.snp), caption = "Logistic regression on Pheno vs Score") %>%
   kable_styling(latex_options = "hold_position")
 ```
 
+In this question, we constructed the weighted genetic risk score for that includes all `SNP`s with p-value $< 1e-4$ , a score with all `SNP`s with
+p-value $< 1e-3$ , and a score that only includes `SNP`s on the `FTO` gene. The weighted genetic risk scores are constructed in way such that both direction and assoication of the effect to the score for each `SNP`. These scores are then computed in Table 11. Looking at the p-value and the $95\%$ confidence interval, we can see that the `Score3` has p-value of $0.215$ and confidence interval of $(0.818, 2.445)$. Its p-value suggest in the insignificance and since the confidence interval contains 1, there is insufficient evidence for association.
+
+
 \newpage
 
 ### Problem 2.f (4 points)
@@ -511,6 +519,9 @@ wgrs.test.3 <- as.matrix(gdm.test.3) %*% hit.snp.3$coefficients
 scores <- c("score.1", "score.2", "score.3")
 gdm.test <- gdm.test %>% copy() %>% 
   .[,`:=`(scores.1 = wgrs.test.1, scores.2 = wgrs.test.2, scores.3 = wgrs.test.3)]
+kable(head(gdm.test[, c(180, 181, 182)]), 
+      caption = "first 6 rows of gdm.test after adding scores") %>%
+  kable_styling(latex_options = "hold_position")
 ```
 
 \newpage
@@ -524,11 +535,11 @@ Use the logistic regression models fitted in problem 2.e to predict the outcome 
 ```{r}
 #fitting each score and predicting its values
 fit1 <- glm(y ~ scores.1, family = binomial(link = "logit"), data=gdm.dt)
-pred.1 <- predict(fit1, newdata = gdm.test[,180], type="response")
+pred.1 <- predict(fit1, newdata = gdm.test[,180], type = "response")
 fit2 <- glm(y ~ scores.2, family = binomial(link = "logit"), data=gdm.dt)
-pred.2 <- predict(fit2, newdata = gdm.test[,181], type="response")
+pred.2 <- predict(fit2, newdata = gdm.test[,181], type = "response")
 fit3 <- glm(y ~ scores.3, family = binomial(link = "logit"), data=gdm.dt)
-pred.3 <- predict(fit3, newdata = gdm.test[,182], type="response")
+pred.3 <- predict(fit3, newdata = gdm.test[,182], type = "response")
 
 #computing the log liklihood
 cat("The log likelihood of score 1:",
@@ -577,7 +588,8 @@ beta2[not.equal] <- -beta2[not.equal]
 #compute weight
 weight1 <- 1/ gdm.study$se^2
 weight2 <- 1/ meta.study$std.error^2
-kable(list(head(weight1), head(weight2)), caption = "Weight of Studies", col.names = "Weight") %>%
+kable(list(head(weight1), head(weight2)), caption = "Weight of Studies",
+      col.names = "Weight") %>%
   kable_styling(latex_options = "hold_position")
 ```
 
@@ -596,6 +608,11 @@ kable(summary, caption = "Summary of the study with p-value$<1e-4$") %>%
   kable_styling(latex_options = "hold_position")
 ```
 
+According to `Lab5`, when genome-wide association studies of the same phenotype are performed in multiple independent studies, it is common to merge the results by performing a meta analysis. This help establish a statistical power and reducing the false-positive findings. 
+
+We harmonise two different studies and compute the confusion matrix to detect false-positive findings. In Table 13, there are two `SNP`s where the allele does not match with the corresponding allele in the other study. Hence, we removed these values and continues our analysis. We negated the values for `my.study` to keep the direction of the effect consistence.
+
+Now we performed the meta analysis by computing the weights for each study. In Table 14, this weight is the inverse variance weighting where the bigger the value has bigger power. Then, we computed the `beta`, `std.error` and `p.value` for the following analysis. These values are then presented in Table 15. 
 
 \newpage
 
@@ -645,7 +662,7 @@ kable(unique(cor0.8, by = "corr"),
 
 We computed the correlation between the features, and displayed as a correlation matrix with a block structure being highlighted with respect to its correlation coefficients. We can see that the blue parts represent a positive correlation where most of this is found in the region between the correlation of between the region of `DIAPH3`-`RFC4`. However, we observed negative correlation between the region of `STK32B`-`PECI.1` to `DIAPH3`-`RFC4`. Furthermore the positive and negative correlation is spread through the correlation matrix.
 
-We also computed the genes that have high correlation among each other. Interestingly, `DIAP3` is highly correlated to `DIAPH3.1` and `DIAPH3.2`. This is self-explanatory as `DIAP3` is the prefix. Similar observation is reported for `PECI` and `IFGBP5`. The correlation between `IFGBP5` and `IFGBP5.1` is $0.9775030$ which is the strongest positive correlation while others are less than $0.9$.
+We also computed the genes that have high correlation among each other in Table 16. Interestingly, `DIAP3` is highly correlated to `DIAPH3.1` and `DIAPH3.2`. This is self-explanatory as `DIAP3` is the prefix. Similar observation is reported for `PECI` and `IFGBP5`. The correlation between `IFGBP5` and `IFGBP5.1` is $0.9775030$ which is the strongest positive correlation while others are less than $0.9$.
 
 
 
@@ -714,7 +731,7 @@ dt <- data.table(model, coefficients, p.value)
 kable(dt, caption = "Association Test for each Principal Component") %>%
   kable_styling(latex_options = "hold_position")
 ```
-We conducted logistic regression for both unadjusted and adjusted model. The unadjusted model only contains each principal component whereas the adjusted model includes other variables such as `age`, `Grade` and `EstrogrenReceptor`. From it, we can see that p-values for the first and third components in unadjusted model are $0.00943$ and $0.00863$ and they can be considered significant. For the adjusted model, only the third component is significant with the value of $0.0245$. Thus, the unadjusted model has 2 components and adjusted model has 1 component that are significant. However, if we revisit the cumulative variance explained plot, we can see that the 3 components can only explain $37.6\%$ of the variance. As a result we can infer that PCA is not so helpful in this model.
+We conducted logistic regression for both unadjusted and adjusted model. The unadjusted model only contains each principal component whereas the adjusted model includes other variables such as `age`, `Grade` and `EstrogrenReceptor`. From Table 17, we can see that p-values for the first and third components in unadjusted model are $0.00943$ and $0.00863$ and they can be considered significant. For the adjusted model, only the third component is significant with the value of $0.0245$. Thus, the unadjusted model has 2 components and adjusted model has 1 component that are significant. However, if we revisit the cumulative variance explained plot, we can see that the 3 components can only explain $37.6\%$ of the variance. As a result we can infer that PCA is not so helpful in this model.
 
 
 \newpage
@@ -877,4 +894,4 @@ We preprocessed the data using our predefined function `prepare.glmnet()`. This 
 First, split the dataset into training and testing dataset with a $7:3$ ratio. After that we continue by conducting logistic regression using `glm()` to compute the full and null models on the training data. With these components, we can conduct backward and forward stepwise selection using `stepAIC()`. 
 Secondly, we continued with the training data previously. We conduct a cross validation on the logistic regression with Lasso and Ridge penalties. Thus, we used `cv.glmnet()` with AUC as a measure.
 
-With the models trained using the training dataset, we now tested on the testing set and plot of ROC curves for each model. From the plot, Backward Stepwsie, Forward Stepwise, Lasso and Ridge are denoted in red, blue, green, orange respectively. Just by looking at the ROC curve, we can see that Ridge regression has the highest AUC value. This is further evident in Table 17. where the AUC value for Ridge regression is $0.826$. Since Ridge regression shrinks the regression coefficients to near zero it will employ all coefficients. As a result, this is not a simple model but we still believe Ridge outperforms other models as shown in Table 17. Thus, Ridge regression is the best model that best describes the dataset and a model that can be used to predict and diagnosis on breast cancer.
+With the models trained using the training dataset, we now tested on the testing set and plot of ROC curves for each model. From the plot, Backward Stepwsie, Forward Stepwise, Lasso and Ridge are denoted in red, blue, green, orange respectively. Just by looking at the ROC curve, we can see that Ridge regression has the highest AUC value. This is further evident in Table 18. where the AUC value for Ridge regression is $0.826$. Since Ridge regression shrinks the regression coefficients to near zero it will employ all coefficients. As a result, this is not a simple model but we still believe Ridge outperforms other models as shown in Table 18. Thus, Ridge regression is the best model that best describes the dataset and a model that can be used to predict and diagnosis on breast cancer.

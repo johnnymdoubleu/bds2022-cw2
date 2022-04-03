@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021/W32TeX) (preloaded format=pdflatex 2022.3.18)  3 APR 2022 22:46
+This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021/W32TeX) (preloaded format=pdflatex 2022.3.18)  3 APR 2022 23:53
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -604,179 +604,185 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 152.
 (c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-) [1
-
-{c:/Users/flame/AppData/Roaming/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-<assignment2_files/figure-latex/unnamed-chunk-3-1.pdf, id=23, 469.755pt x 325.215pt>
+)
+<assignment2_files/figure-latex/unnamed-chunk-3-1.pdf, id=4, 469.755pt x 325.215pt>
 File: assignment2_files/figure-latex/unnamed-chunk-3-1.pdf Graphic file (type pdf)
 <use assignment2_files/figure-latex/unnamed-chunk-3-1.pdf>
-Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-3-1.pdf  used on input line 192.
+Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-3-1.pdf  used on input line 191.
 (pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-[2 <./assignment2_files/figure-latex/unnamed-chunk-3-1.pdf>]
+[1
 
-LaTeX Warning: `!h' float specifier changed to `!ht'.
-
-[3]
-
-LaTeX Warning: `!h' float specifier changed to `!ht'.
-
-[4pdfTeX warning (ext4): destination with the same identifier (name{table.1}) has been already used, duplicate ignored
+{c:/Users/flame/AppData/Roaming/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2 <./assignment2_files/figure-latex/unnamed-chunk-3-1.pdf>] [3pdfTeX warning (ext4): destination with the same identifier (name{table.1}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.456 \newpage
-              ] [5pdfTeX warning (ext4): destination with the same identifier (name{table.2}) has been already used, duplicate ignored
+l.315 
+      ] [4] [5pdfTeX warning (ext4): destination with the same identifier (name{table.2}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.540 \newpage
-              ]
-<assignment2_files/figure-latex/unnamed-chunk-9-1.pdf, id=64, 469.755pt x 252.945pt>
+l.444 L
+       ooking at Table 2 below. we can see that there are 14 features for] [6] [7]
+<assignment2_files/figure-latex/unnamed-chunk-9-1.pdf, id=73, 469.755pt x 252.945pt>
 File: assignment2_files/figure-latex/unnamed-chunk-9-1.pdf Graphic file (type pdf)
 <use assignment2_files/figure-latex/unnamed-chunk-9-1.pdf>
-Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-9-1.pdf  used on input line 563.
+Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-9-1.pdf  used on input line 560.
 (pdftex.def)             Requested size: 469.75386pt x 252.94438pt.
-[6pdfTeX warning (ext4): destination with the same identifier (name{table.3}) has been already used, duplicate ignored
+[8pdfTeX warning (ext4): destination with the same identifier (name{table.3}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.597 \newpage
+l.594 \newpage
                <./assignment2_files/figure-latex/unnamed-chunk-9-1.pdf>]
-<assignment2_files/figure-latex/unnamed-chunk-10-1.pdf, id=80, 469.755pt x 266.9975pt>
+<assignment2_files/figure-latex/unnamed-chunk-10-1.pdf, id=89, 469.755pt x 266.9975pt>
 File: assignment2_files/figure-latex/unnamed-chunk-10-1.pdf Graphic file (type pdf)
 <use assignment2_files/figure-latex/unnamed-chunk-10-1.pdf>
-Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-10-1.pdf  used on input line 638.
+Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-10-1.pdf  used on input line 635.
 (pdftex.def)             Requested size: 469.75386pt x 266.99683pt.
-[7 <./assignment2_files/figure-latex/unnamed-chunk-10-1.pdf>] [8pdfTeX warning (ext4): destination with the same identifier (name{table.4}) has been already used, duplicate ignored
+[9 <./assignment2_files/figure-latex/unnamed-chunk-10-1.pdf>] [10pdfTeX warning (ext4): destination with the same identifier (name{table.4}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.686 \newpage
+l.683 \newpage
               ]
 LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <10> not available
-(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 716.
-[9] [10] [11pdfTeX warning (ext4): destination with the same identifier (name{table.5}) has been already used, duplicate ignored
+(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 713.
+[11] [12] [13pdfTeX warning (ext4): destination with the same identifier (name{table.5}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.869 \end{Shaded}
+l.866 \end{Shaded}
                   pdfTeX warning (ext4): destination with the same identifier (name{table.6}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.869 \end{Shaded}
-                  ] [12pdfTeX warning (ext4): destination with the same identifier (name{table.7}) has been already used, duplicate ignored
+l.866 \end{Shaded}
+                  ] [14pdfTeX warning (ext4): destination with the same identifier (name{table.7}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.928 \newpage
-              ] [13pdfTeX warning (ext4): destination with the same identifier (name{table.8}) has been already used, duplicate ignored
+l.925 \newpage
+              ]
+<assignment2_files/figure-latex/unnamed-chunk-18-1.pdf, id=145, 469.755pt x 325.215pt>
+File: assignment2_files/figure-latex/unnamed-chunk-18-1.pdf Graphic file (type pdf)
+<use assignment2_files/figure-latex/unnamed-chunk-18-1.pdf>
+Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-18-1.pdf  used on input line 992.
+(pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
+[15pdfTeX warning (ext4): destination with the same identifier (name{table.8}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.1021 \end{Shaded}
-                   pdfTeX warning (ext4): destination with the same identifier (name{table.9}) has been already used, duplicate ignored
+l.994 \begin{Shaded}
+                    ]
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+[16pdfTeX warning (ext4): destination with the same identifier (name{table.9}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.1021 \end{Shaded}
-                   ] [14pdfTeX warning (ext4): destination with the same identifier (name{table.10}) has been already used, duplicate ignored
+l.1062 
+        <./assignment2_files/figure-latex/unnamed-chunk-18-1.pdf>] [17pdfTeX warning (ext4): destination with the same identifier (name{table.10}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.1042 \newpage
+l.1068 \newpage
                ]
-LaTeX Font Info:    Trying to load font information for TS1+lmtt on input line 1079.
+LaTeX Font Info:    Trying to load font information for TS1+lmtt on input line 1105.
 (c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/lm/ts1lmtt.fd
 File: ts1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-) [15pdfTeX warning (ext4): destination with the same identifier (name{table.11}) has been already used, duplicate ignored
+) [18pdfTeX warning (ext4): destination with the same identifier (name{table.11}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.1117 \newpage
-               ] [16] [17] [18pdfTeX warning (ext4): destination with the same identifier (name{table.12}) has been already used, duplicate ignored
+l.1154 
+       ] [19] [20pdfTeX warning (ext4): destination with the same identifier (name{table.12}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.1325 \begin{Shaded}
-                     pdfTeX warning (ext4): destination with the same identifier (name{table.13}) has been already used, duplicate ignored
+l.1224 \newpage
+               ] [21] [22pdfTeX warning (ext4): destination with the same identifier (name{table.13}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.1325 \begin{Shaded}
-                     ] [19pdfTeX warning (ext4): destination with the same identifier (name{table.14}) has been already used, duplicate ignored
+l.1390 \begin{Shaded}
+                     pdfTeX warning (ext4): destination with the same identifier (name{table.14}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.1367 \newpage
+l.1390 \begin{Shaded}
+                     ] [23pdfTeX warning (ext4): destination with the same identifier (name{table.15}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.1450 \newpage
                ]
-<assignment2_files/figure-latex/unnamed-chunk-30-1.pdf, id=195, 469.755pt x 325.215pt>
-File: assignment2_files/figure-latex/unnamed-chunk-30-1.pdf Graphic file (type pdf)
-<use assignment2_files/figure-latex/unnamed-chunk-30-1.pdf>
-Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-30-1.pdf  used on input line 1409.
+<assignment2_files/figure-latex/unnamed-chunk-31-1.pdf, id=219, 469.755pt x 325.215pt>
+File: assignment2_files/figure-latex/unnamed-chunk-31-1.pdf Graphic file (type pdf)
+<use assignment2_files/figure-latex/unnamed-chunk-31-1.pdf>
+Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-31-1.pdf  used on input line 1492.
 (pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-[20 <./assignment2_files/figure-latex/unnamed-chunk-30-1.pdf>] [21pdfTeX warning (ext4): destination with the same identifier (name{table.15}) has been already used, duplicate ignored
+[24 <./assignment2_files/figure-latex/unnamed-chunk-31-1.pdf>] [25pdfTeX warning (ext4): destination with the same identifier (name{table.16}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.1476 \newpage
+l.1559 \newpage
                ]
-<assignment2_files/figure-latex/unnamed-chunk-32-1.pdf, id=217, 469.755pt x 266.9975pt>
-File: assignment2_files/figure-latex/unnamed-chunk-32-1.pdf Graphic file (type pdf)
-<use assignment2_files/figure-latex/unnamed-chunk-32-1.pdf>
-Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-32-1.pdf  used on input line 1503.
-(pdftex.def)             Requested size: 469.75386pt x 266.99683pt.
-
-Underfull \hbox (badness 10000) in paragraph at lines 1503--1513
-[][]
- []
-
-<assignment2_files/figure-latex/unnamed-chunk-33-1.pdf, id=218, 469.755pt x 266.9975pt>
+<assignment2_files/figure-latex/unnamed-chunk-33-1.pdf, id=242, 469.755pt x 266.9975pt>
 File: assignment2_files/figure-latex/unnamed-chunk-33-1.pdf Graphic file (type pdf)
 <use assignment2_files/figure-latex/unnamed-chunk-33-1.pdf>
-Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-33-1.pdf  used on input line 1523.
-(pdftex.def)             Requested size: 469.75386pt x 266.99683pt.
-[22 <./assignment2_files/figure-latex/unnamed-chunk-32-1.pdf>]
-<assignment2_files/figure-latex/unnamed-chunk-33-2.pdf, id=233, 469.755pt x 266.9975pt>
-File: assignment2_files/figure-latex/unnamed-chunk-33-2.pdf Graphic file (type pdf)
-<use assignment2_files/figure-latex/unnamed-chunk-33-2.pdf>
-Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-33-2.pdf  used on input line 1538.
+Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-33-1.pdf  used on input line 1586.
 (pdftex.def)             Requested size: 469.75386pt x 266.99683pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 1538--1547
+Underfull \hbox (badness 10000) in paragraph at lines 1586--1596
 [][]
  []
 
-[23 <./assignment2_files/figure-latex/unnamed-chunk-33-1.pdf> <./assignment2_files/figure-latex/unnamed-chunk-33-2.pdf>] [24pdfTeX warning (ext4): destination with the same identifier (name{table.16}) has been already used, duplicate ignored
+<assignment2_files/figure-latex/unnamed-chunk-34-1.pdf, id=243, 469.755pt x 266.9975pt>
+File: assignment2_files/figure-latex/unnamed-chunk-34-1.pdf Graphic file (type pdf)
+<use assignment2_files/figure-latex/unnamed-chunk-34-1.pdf>
+Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-34-1.pdf  used on input line 1606.
+(pdftex.def)             Requested size: 469.75386pt x 266.99683pt.
+[26 <./assignment2_files/figure-latex/unnamed-chunk-33-1.pdf>]
+<assignment2_files/figure-latex/unnamed-chunk-34-2.pdf, id=258, 469.755pt x 266.9975pt>
+File: assignment2_files/figure-latex/unnamed-chunk-34-2.pdf Graphic file (type pdf)
+<use assignment2_files/figure-latex/unnamed-chunk-34-2.pdf>
+Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-34-2.pdf  used on input line 1621.
+(pdftex.def)             Requested size: 469.75386pt x 266.99683pt.
+
+Underfull \hbox (badness 10000) in paragraph at lines 1621--1630
+[][]
+ []
+
+[27 <./assignment2_files/figure-latex/unnamed-chunk-34-1.pdf> <./assignment2_files/figure-latex/unnamed-chunk-34-2.pdf>] [28pdfTeX warning (ext4): destination with the same identifier (name{table.17}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.1618 \newpage
+l.1701 \newpage
                ]
-<assignment2_files/figure-latex/unnamed-chunk-35-1.pdf, id=255, 469.755pt x 722.7pt>
-File: assignment2_files/figure-latex/unnamed-chunk-35-1.pdf Graphic file (type pdf)
-<use assignment2_files/figure-latex/unnamed-chunk-35-1.pdf>
-Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-35-1.pdf  used on input line 1649.
-(pdftex.def)             Requested size: 422.78276pt x 650.43501pt.
-[25] [26 <./assignment2_files/figure-latex/unnamed-chunk-35-1.pdf>]
-<assignment2_files/figure-latex/unnamed-chunk-36-1.pdf, id=278, 469.755pt x 722.7pt>
+<assignment2_files/figure-latex/unnamed-chunk-36-1.pdf, id=281, 469.755pt x 722.7pt>
 File: assignment2_files/figure-latex/unnamed-chunk-36-1.pdf Graphic file (type pdf)
 <use assignment2_files/figure-latex/unnamed-chunk-36-1.pdf>
-Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-36-1.pdf  used on input line 1727.
+Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-36-1.pdf  used on input line 1732.
 (pdftex.def)             Requested size: 422.78276pt x 650.43501pt.
-[27] [28 <./assignment2_files/figure-latex/unnamed-chunk-36-1.pdf>]
+[29] [30 <./assignment2_files/figure-latex/unnamed-chunk-36-1.pdf>]
+<assignment2_files/figure-latex/unnamed-chunk-37-1.pdf, id=302, 469.755pt x 722.7pt>
+File: assignment2_files/figure-latex/unnamed-chunk-37-1.pdf Graphic file (type pdf)
+<use assignment2_files/figure-latex/unnamed-chunk-37-1.pdf>
+Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-37-1.pdf  used on input line 1810.
+(pdftex.def)             Requested size: 422.78276pt x 650.43501pt.
+[31] [32 <./assignment2_files/figure-latex/unnamed-chunk-37-1.pdf>]
 
 LaTeX Font Warning: Font shape `T1/lmtt/bx/it' in size <10> not available
-(Font)              Font shape `T1/lmtt/b/sl' tried instead on input line 1744.
+(Font)              Font shape `T1/lmtt/b/sl' tried instead on input line 1827.
 
-[29]
-<assignment2_files/figure-latex/unnamed-chunk-40-1.pdf, id=301, 469.755pt x 325.215pt>
-File: assignment2_files/figure-latex/unnamed-chunk-40-1.pdf Graphic file (type pdf)
-<use assignment2_files/figure-latex/unnamed-chunk-40-1.pdf>
-Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-40-1.pdf  used on input line 1832.
+[33]
+<assignment2_files/figure-latex/unnamed-chunk-41-1.pdf, id=326, 469.755pt x 325.215pt>
+File: assignment2_files/figure-latex/unnamed-chunk-41-1.pdf Graphic file (type pdf)
+<use assignment2_files/figure-latex/unnamed-chunk-41-1.pdf>
+Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-41-1.pdf  used on input line 1915.
 (pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-[30 <./assignment2_files/figure-latex/unnamed-chunk-40-1.pdf>] [31pdfTeX warning (ext4): destination with the same identifier (name{table.17}) has been already used, duplicate ignored
+[34 <./assignment2_files/figure-latex/unnamed-chunk-41-1.pdf>] [35pdfTeX warning (ext4): destination with the same identifier (name{table.18}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.1898 \end{document}
+l.1981 \end{document}
                      ] (./assignment2.aux) ) 
 Here is how much of TeX's memory you used:
- 15447 strings out of 480216
- 251763 string characters out of 5893255
- 578738 words of memory out of 5000000
- 32866 multiletter control sequences out of 15000+600000
- 515592 words of font info for 134 fonts, out of 8000000 for 9000
+ 15466 strings out of 480216
+ 252280 string characters out of 5893255
+ 576810 words of memory out of 5000000
+ 32873 multiletter control sequences out of 15000+600000
+ 515841 words of font info for 137 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  74i,9n,77p,1008b,372s stack positions out of 5000i,500n,10000p,200000b,80000s
 {c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}{c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}<c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr7.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy7.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtk10.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtko10.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtti10.pfb>
-Output written on assignment2.pdf (31 pages, 513935 bytes).
+Output written on assignment2.pdf (35 pages, 533912 bytes).
 PDF statistics:
- 530 PDF objects out of 1000 (max. 8388607)
- 444 compressed objects within 5 object streams
- 127 named destinations out of 1000 (max. 500000)
- 22891 words of extra memory for PDF output out of 24883 (max. 10000000)
+ 554 PDF objects out of 1000 (max. 8388607)
+ 462 compressed objects within 5 object streams
+ 132 named destinations out of 1000 (max. 500000)
+ 22896 words of extra memory for PDF output out of 24883 (max. 10000000)
 
