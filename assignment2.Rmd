@@ -285,6 +285,7 @@ for (colnm in colnames(gdm.dt,-1)){
 }
 ```
 
+We conducted imputation where the missing values are imputed with the median values. In here we do not use mean imputation as the values are categorical and not continuous. Thus imputed according to SNP-wise median allele count.
 \newpage
 
 ### Problem 2.b (8 points)
@@ -331,7 +332,7 @@ x <- gdm.dt[, 4:ncol(gdm.dt)]
 y <- gdm.dt[[3]]
 #performing logistic regression on each SNP
 study <- univ.glm.test(x, y)
-kable(head(study), caption = "Logistic Regression on Pheno vs each SNP") %>%
+kable(head(study), caption = "Logistic Regression on Pheno vs first 6 SNPs") %>%
   kable_styling(latex_options = "hold_position")
 ```
 
@@ -354,7 +355,7 @@ newindex <- which(study$odds.ratio < 1)
 best <- study[newindex,]
 
 # Select the SNP with lowest p value
-idx <- which(best$p.value == min(best$p.value))
+idx <- which(best$odds.ratios == min(best$odds.ratios))
 best.SNP <- best[idx]
 
 kable(best.SNP, 
@@ -364,14 +365,17 @@ kable(best.SNP,
 #Compute Confidence Interval
 best.coef <- best.SNP$coefficients
 best.se <- best.SNP$std.error
-best.ci.95 <- round(exp(best.coef +1.96*best.se *c(-1,1)),3)
-best.ci.99 <- round(exp(best.coef +2.576*best.se *c(-1,1)),3)
+best.ci.95 <- round(exp(best.coef + 1.96 * best.se *c(-1,1)),3)
+best.ci.99 <- round(exp(best.coef + 2.576 * best.se *c(-1,1)),3)
 cat("\n SNPs with most protective effect on gestational diabetes,", 
     "\n 95% Confidence Interval is", best.ci.95, 
     "\n 99% Confidence Interval is", best.ci.99)
 ```
+With the predefined function `univ_glm_test()`, we conducted the logistic regression on `pheno` vs each `SNP`. From this, we obtained their `coefficients`, `odds.ratios`, `std.error` and `p.value` and tabulated in Table 5.
 
-We can see that SNP rs1423096_T has the highest odds ratio (1.91758) and hence is the most strongly associated to increased risk of gestational diabetes. In fact, this SNP increases the odds of having gestational diabetes by about 92!. The SNP with most significant protective effect is rs2237897_T and it reduced the risk of diabetes by about 35%.
+To compute the `SNP` with the most strongly associated to increased risk of gestational diabetes, we find the `SNP` with the lowest p-value. As a result, we observe `rs12243326_A` with p-value of $4.6e-5$ in Table 6. To that, its' $95\%$ and $99\%$ confidence intervals are $(1.398, 2.601),(1.268, 2.867)$ respectively. By taking exponential this computes the confidence interval of the odds ratios. Since it does not include 1, we have sufficient evidence to say that `rs12243326_A` is the most strongly associated to increased risk of gestational diabetes.
+
+To compute the `SNP` with the most protective effect on gestational diabetes, we find the `SNP` with the lowest odds ratios. As a result, we observe `rs11575839_C` with odds ratios of $0.548$ in Table 7. To that, its' $95\%$ and $99\%$ confidence intervals are $(0.262, 1.144),(0.208, 1.442)$ respectively. Since it contains 1 in the confidence interval, we do not have sufficient evidence to accept that `rs11575839_C` is the most protective effect on gestational diabetes.
 
 \newpage
 
@@ -402,6 +406,14 @@ kable(hit.snps[,c("SNP", "effect.allele","chrom","gene")],
 ```
 
 ```{r}
+merge.dt <- merge.dt %>% copy() %>% .[, pos := as.numeric(pos)] %>%
+  .[, cum.pos := cumsum(pos)] %>% .[, chrom := as.numeric(chrom)]
+chrom.cols <- 1 + merge.dt$chrom %% 2 # 1 for even, 2 for odd chromosomes
+with(merge.dt, plot(cum.pos, -log10(p.value), col = chrom.cols, pch = 20, 
+                    cex = 0.8, main = "Manhattan plot", xlab = "Positions"))
+abline(h = -log10(1e-4), lty = 2, col = "red")
+```
+```{r}
 #computing the gene list for 1st SNP that are within 1Mb window
 hit.snp.window <- data.table()
 idx <- which(hit.snps$SNP==hit.snps$SNP[1])
@@ -412,6 +424,7 @@ caption <- paste("Gene within $1$Mb Window for",hit.snps$SNP[1])
 kable(unique(data.table(hit.snp.window$gene)), col.names = "gene", 
       caption = caption) %>% kable_styling(latex_options = "hold_position")
 ```
+
 ```{r}
 #computing the gene list for 2nd SNP that are within 1Mb window
 hit.snp.window <- data.table()
@@ -812,13 +825,15 @@ fit.lasso <- cv.glmnet(as.matrix(nki.train[,-c(1)]), nki.y.train, alpha = 1,
                        family = "binomial", type.measure = "auc")
 fit.ridge <- cv.glmnet(as.matrix(nki.train[,-c(1)]), nki.y.train, alpha = 0,
                        family = "binomial", type.measure = "auc")
-  
+#retrieve index of the lambda min for model size
+lambda.lasso.idx <- which(fit.lasso$lambda.min == fit.lasso$lambda)
+lambda.ridge.idx <- which(fit.ridge$lambda.min == fit.ridge$lambda)
 #model size of Lasso and Ridge regression of lambda min
 ms.lasso <- fit.lasso$nzero[lambda.lasso.idx]
 ms.ridge <- fit.ridge$nzero[lambda.ridge.idx]
 ```
 
-```{r , error=FALSE, warning=FALSE, message=FALSE, fig.height=4}
+```{r , error=FALSE, warning=FALSE, message=FALSE, fig.height=4.5}
 invisible({capture.output({
 #Lasso and Ridge Regression model
 lasso.pred <- predict(fit.lasso, newx = as.matrix(nki.test[,-c(1)]), s="lambda.min")
@@ -862,4 +877,4 @@ We preprocessed the data using our predefined function `prepare.glmnet()`. This 
 First, split the dataset into training and testing dataset with a $7:3$ ratio. After that we continue by conducting logistic regression using `glm()` to compute the full and null models on the training data. With these components, we can conduct backward and forward stepwise selection using `stepAIC()`. 
 Secondly, we continued with the training data previously. We conduct a cross validation on the logistic regression with Lasso and Ridge penalties. Thus, we used `cv.glmnet()` with AUC as a measure.
 
-With the models trained using the training dataset, we now tested on the testing set and plot of ROC curves for each model. From the plot, Backward Stepwsie, Forward Stepwise, Lasso and Ridge are denoted in red, blue, green, orange respectively. Just by looking at the ROC curve we can see that Ridge regression 
+With the models trained using the training dataset, we now tested on the testing set and plot of ROC curves for each model. From the plot, Backward Stepwsie, Forward Stepwise, Lasso and Ridge are denoted in red, blue, green, orange respectively. Just by looking at the ROC curve, we can see that Ridge regression has the highest AUC value. This is further evident in Table 17. where the AUC value for Ridge regression is $0.826$. Since Ridge regression shrinks the regression coefficients to near zero it will employ all coefficients. As a result, this is not a simple model but we still believe Ridge outperforms other models as shown in Table 17. Thus, Ridge regression is the best model that best describes the dataset and a model that can be used to predict and diagnosis on breast cancer.
