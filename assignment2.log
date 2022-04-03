@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021/W32TeX) (preloaded format=pdflatex 2022.3.18)  3 APR 2022 20:59
+This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021/W32TeX) (preloaded format=pdflatex 2022.3.18)  3 APR 2022 21:20
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -736,47 +736,47 @@ Underfull \hbox (badness 10000) in paragraph at lines 1518--1527
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
 l.1598 \newpage
-               ] [25]
-<assignment2_files/figure-latex/unnamed-chunk-35-1.pdf, id=260, 469.755pt x 722.7pt>
+               ]
+<assignment2_files/figure-latex/unnamed-chunk-35-1.pdf, id=255, 469.755pt x 722.7pt>
 File: assignment2_files/figure-latex/unnamed-chunk-35-1.pdf Graphic file (type pdf)
 <use assignment2_files/figure-latex/unnamed-chunk-35-1.pdf>
 Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-35-1.pdf  used on input line 1629.
 (pdftex.def)             Requested size: 422.78276pt x 650.43501pt.
-[26] [27 <./assignment2_files/figure-latex/unnamed-chunk-35-1.pdf>]
-<assignment2_files/figure-latex/unnamed-chunk-36-1.pdf, id=282, 469.755pt x 722.7pt>
+[25] [26 <./assignment2_files/figure-latex/unnamed-chunk-35-1.pdf>]
+<assignment2_files/figure-latex/unnamed-chunk-36-1.pdf, id=278, 469.755pt x 722.7pt>
 File: assignment2_files/figure-latex/unnamed-chunk-36-1.pdf Graphic file (type pdf)
 <use assignment2_files/figure-latex/unnamed-chunk-36-1.pdf>
-Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-36-1.pdf  used on input line 1674.
+Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-36-1.pdf  used on input line 1707.
 (pdftex.def)             Requested size: 422.78276pt x 650.43501pt.
-[28] [29 <./assignment2_files/figure-latex/unnamed-chunk-36-1.pdf>] [30]
+[27] [28 <./assignment2_files/figure-latex/unnamed-chunk-36-1.pdf>]
 
 LaTeX Font Warning: Font shape `T1/lmtt/bx/it' in size <10> not available
-(Font)              Font shape `T1/lmtt/b/sl' tried instead on input line 1708.
+(Font)              Font shape `T1/lmtt/b/sl' tried instead on input line 1724.
 
-[31]
-<assignment2_files/figure-latex/unnamed-chunk-40-1.pdf, id=310, 469.755pt x 289.08pt>
+[29]
+<assignment2_files/figure-latex/unnamed-chunk-40-1.pdf, id=301, 469.755pt x 289.08pt>
 File: assignment2_files/figure-latex/unnamed-chunk-40-1.pdf Graphic file (type pdf)
 <use assignment2_files/figure-latex/unnamed-chunk-40-1.pdf>
-Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-40-1.pdf  used on input line 1800.
+Package pdftex.def Info: assignment2_files/figure-latex/unnamed-chunk-40-1.pdf  used on input line 1816.
 (pdftex.def)             Requested size: 469.75386pt x 289.07928pt.
-[32] [33pdfTeX warning (ext4): destination with the same identifier (name{table.17}) has been already used, duplicate ignored
+[30] [31pdfTeX warning (ext4): destination with the same identifier (name{table.17}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.1834 \end{document}
+l.1854 \end{document}
                       <./assignment2_files/figure-latex/unnamed-chunk-40-1.pdf>] (./assignment2.aux) ) 
 Here is how much of TeX's memory you used:
- 15441 strings out of 480216
- 251687 string characters out of 5893255
+ 15439 strings out of 480216
+ 251677 string characters out of 5893255
  578734 words of memory out of 5000000
  32866 multiletter control sequences out of 15000+600000
  515260 words of font info for 130 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  74i,9n,77p,1008b,372s stack positions out of 5000i,500n,10000p,200000b,80000s
 {c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}{c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}<c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr7.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy7.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtk10.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtko10.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb><c:/Users/flame/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtti10.pfb>
-Output written on assignment2.pdf (33 pages, 510572 bytes).
+Output written on assignment2.pdf (31 pages, 510907 bytes).
 PDF statistics:
- 538 PDF objects out of 1000 (max. 8388607)
- 450 compressed objects within 5 object streams
- 129 named destinations out of 1000 (max. 500000)
+ 530 PDF objects out of 1000 (max. 8388607)
+ 444 compressed objects within 5 object streams
+ 127 named destinations out of 1000 (max. 500000)
  22891 words of extra memory for PDF output out of 24883 (max. 10000000)
 

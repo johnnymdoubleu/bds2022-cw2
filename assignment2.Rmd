@@ -669,7 +669,7 @@ abline(h = 0.50, col="red", lty=5); abline(h = 0.90, col = "blue", lty = 5)
 legend("topleft", legend = c("Cut-off @ 0.50", "Cut-off @ 0.90"),
        col = c("red","blue"), lty = 5, cex = 0.6)
 ```
-Looking at the two plots above, we can see that the first component has the highest percentage variance explained and the percentage explained is $24.2\%$. The next components adds up to $31.8\%$ and $37.7\%$ respectively from the percentage variance explained and cumulative variance explained plot. From the 4th component, we see that the increase in percentage is much smaller compared to the first three components. As a result, we will chose the first three components to continue our analysis with its visualisation in the next part.
+Looking at the two plots above, we can see that the first component has the highest percentage variance explained and the percentage explained is $24.2\%$. The next components adds up to $31.8\%$ and $37.7\%$ respectively from the percentage variance explained and cumulative variance explained plot. From component 4, we see that the increase in percentage is much smaller compared to the first three components. As a result, we will chose the first three components to continue our analysis with its visualisation in the next part.
 ```{r}
 pc <- nki.pca$x[,1:3] #retrieving the first 3 principal components
 #fitting logistic regression on each principal component
@@ -731,14 +731,19 @@ grid.arrange(p1,p2,p3)
 
 Now we plot the principal components against each other for the selected first three components. We first analyse the scatter plot against each component using `fviz_pca_ind()`. 
 
-The datapoints in the above plot are the individual counties. They were artificially grouped and coloured by quartile. The x-axis in the first plot is the first principle component and the value between brackets is the proportion of the variance it explains. The y-axis in the first plot is the second component and in the second graph the counties are projected on the plane formed by the second and third components. Same applies for the third plot. Looking at all plots we can see that the ellipses overlap. To overcome this we could just look at the largest and lowest quartiles. 
+The datapoints in the above plot are the individual counties. They were artificially grouped and coloured by quartile. The x-axis in the first plot is the first principle component and the value between brackets is the proportion of the variance it explains. The y-axis in the first plot is the second component and in the second graph the counties are projected on the plane formed by the second and third components. Same applies for the third plot. Looking at all plots we can see that the ellipses overlap. To overcome this we could just look at the largest and lowest quartiles.
+
 Furthermore, each component simply describes the variation in a dataset. A dataset which contains a few variables that are associated with our outcome of interest and a lot more variables that aren’t won’t be very good at separating individual observations of the outcome. This isn’t entirely the case with our dataset as while the ellipses overlap, for the first two principal components and first and third principal components show that they do separate slightly in the right order along the x and y axes. 
+
 Looking in closely, centroids are separated in the right order along the x-axis for the first principal component and marginally so along the y-axis for the second principal component. However, in the second graph the ellipses completely overlap. Removing a few variables which weren’t associated with our outcome of interest in the correlation matrix may help improve matters. Finally, first and second components and first and third components contain the large variation in our data it is therefore a good idea to examine the subset of most extreme values for the first two components as they are likely to contain outliers.
 
-The plot below is known as biplot and we used `fviz_pca_biplot` to have a visual representation of the linear composition of the components. The dots are the same datapoints then in the previous graph but without colour and each arrow represents the direction of each variable in the the 2D plane of the first three components. 
+The plot below is known as biplot and we used `fviz_pca_biplot()` to have a visual representation of the linear composition of the components. The dots are the same datapoints then in the previous graph but without colour and each arrow represents the direction of each variable in the the 2D plane of the first three components. 
+
 For the first component we would look at the variables with greatest magnitude along the x-axis, i.e. furthest to the left and furthest to the right. The first component mainly assigns large positive values to indicators of `MELK` and `RFC4` and large negative values to indicators of `STK32B` and `TGFB3` from the first and thrid plots. The actual coefficients for each variable for the first two principal components is given below.
+
 For the second component we look at the variables with the greatest magnitude along the y-axis, i.e. the highest and lowest variables. For the component we can see that `PECI`, `PECI.1`, `COL4A2` and `SLC2A3` carry the most weight from the first and second plots. This roughly follows the blocks that we observed in the correlation plot which isn’t surprising given that the components are the eigenvectors of the variance-covariance matrix of the the predictor variables.
-For the third component we look at the variables with the greatest magnitude along the y-axis. For the component, we can see that ` 
+
+For the third component we look at the variables with the greatest magnitude along the y-axis. For the component, we can see that assignment on `IGFBP5`, `IGFBP5.1` for large positive values and `OXCT1` and `GPR180` for the large negative values from the second and third plots.
 
 ```{r warning=FALSE, fig.height=10}
 #plotting biplot for each Principal Component
@@ -779,7 +784,7 @@ invisible({capture.output({
   nki.y.train <- nki$Event[split.index]
   nki.y.test <- nki$Event[-split.index]
   
-  #perform one-hot encoding
+  #perform multiple-hot encoding
   nki.1hot <- prepare.glmnet(nki, ~.)
   nki.train <- nki.1hot[split.index,]
   nki.test <- nki.1hot[-split.index,]
@@ -807,13 +812,7 @@ fit.lasso <- cv.glmnet(as.matrix(nki.train[,-c(1)]), nki.y.train, alpha = 1,
                        family = "binomial", type.measure = "auc")
 fit.ridge <- cv.glmnet(as.matrix(nki.train[,-c(1)]), nki.y.train, alpha = 0,
                        family = "binomial", type.measure = "auc")
-
-#retrieve index of the lambda min for auc values
-lambda.lasso.idx <- which(fit.lasso$lambda.min == fit.lasso$lambda)
-lambda.ridge.idx <- which(fit.ridge$lambda.min == fit.ridge$lambda)
-lambda.lasso.auc <- signif(fit.lasso$cvm[lambda.lasso.idx],3)
-lambda.ridge.auc <- signif(fit.ridge$cvm[lambda.ridge.idx],3)
-
+  
 #model size of Lasso and Ridge regression of lambda min
 ms.lasso <- fit.lasso$nzero[lambda.lasso.idx]
 ms.ridge <- fit.ridge$nzero[lambda.ridge.idx]
@@ -838,7 +837,7 @@ lasso.auc <- roc(nki.y.test, lasso.pred,
                    plot = TRUE, add = TRUE, col = "green")
 ridge.auc <- roc(nki.y.test, ridge.pred, 
                    plot = TRUE, add = TRUE, col = "orange")
-legend("bottomleft", legend = c("Backward Stepwise", "Forward Stepwise", 
+legend("topright", legend = c("Backward Stepwise", "Forward Stepwise", 
                                 "Lasso Regression", "Ridge Regression"),
        col = c("red", "blue", "green", "orange"), 
        lty = 1, cex = 0.8, bty = "n")
@@ -856,4 +855,11 @@ kable(dt, caption="Accuracy of Models") %>%
   kable_styling(latex_options = "hold_position")
 ```
 
+As we mentioned in Q3 b), PCA does not seem to work well in this dataset as we need nearly 32 components so that can best represent the variance. Thus we attempted several analysis with Lasso, Ridge, backward and forward stepwise selection.
 
+We preprocessed the data using our predefined function `prepare.glmnet()`. This function takes a dataframe as an input and conducts multiple hot encoding on the dataset i.e. changes the categorical variable to numerical variable.
+
+First, split the dataset into training and testing dataset with a $7:3$ ratio. After that we continue by conducting logistic regression using `glm()` to compute the full and null models on the training data. With these components, we can conduct backward and forward stepwise selection using `stepAIC()`. 
+Secondly, we continued with the training data previously. We conduct a cross validation on the logistic regression with Lasso and Ridge penalties. Thus, we used `cv.glmnet()` with AUC as a measure.
+
+With the models trained using the training dataset, we now tested on the testing set and plot of ROC curves for each model. From the plot, Backward Stepwsie, Forward Stepwise, Lasso and Ridge are denoted in red, blue, green, orange respectively. Just by looking at the ROC curve we can see that Ridge regression 
