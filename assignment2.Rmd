@@ -64,14 +64,16 @@ fit.ridge <- cv.glmnet(biomarkers.x, biomarkers.y , alpha = 0,
 
 #plotting lambda values for Lasso and Ridge Regression
 par(mfrow=c(1,2), mar=c(4,4,5,2))
-plot(fit.lasso, main="Lasso")
-plot(fit.ridge, main="Ridge")
+plot(fit.lasso, main = "Lasso")
+plot(fit.ridge, main = "Ridge")
 
 #computing optimal lambda values for Lasso and Ridge Regression
-cat("The optimal value of lambda for Lasso is:", fit.ridge$lambda.min)
-cat("The optimal value of lambda for Ridge is:", fit.lasso$lambda.min)
+cat("The optimal value of lambda for Lasso is:", fit.lasso$lambda.min)
+cat("The optimal value of lambda for Ridge is:", fit.ridge$lambda.min)
 ```
-The plot displays the mean cross-validated error in red with bars corresponding to standard errors. The leftmost dotted line in each plot corresponds to the $\lambda$ that minimizes the error (`lambda.min` in the fitted object); the dotted line to the right corresponds to the largest value of $\lambda$ such that the error is within one standard error from the minimum (`fit.lasso$lambda.1se` in the fitted object)
+We performed cross validation on Lasso and Ridge regression. To do that, we split the training and testing dataset into $7:3$ ratio and run `cv.glmnet()`.
+
+The plot displays the mean cross-validated error in red with bars corresponding to standard errors. The leftmost dotted line in each plot corresponds to the $\lambda$ that minimizes the error (`lambda.min` in the fitted object); the dotted line to the right corresponds to the largest value of $\lambda$ such that the error is within one standard error from the minimum (`fit.lasso$lambda.1se` in the fitted object). To that, we obtained optimal values of $\lambda$ that maximises AUC for Lasso and Ridge of $0.0368$ and $0.0298$ respectively.
 
 \newpage
 
@@ -119,9 +121,10 @@ dt <-data.table(model = c("Lasso.min", "Lasso.1se",
                                   ms.ridge.min, ms.ridge.1se),
                     AUC = c(AUC.lambdamin.lasso, AUC.lambda1se.lasso,
                             AUC.lambdamin.ridge, AUC.lambda1se.ridge))
-kable(dt, caption = "Lambda values with its model size and AUC") %>% 
-  kable_styling(latex_options = "hold_position")
+kable(dt, caption = "Lambda values with its model size and AUC") %>%
+  kable_styling(full_width = F, position = "center", latex_options = "hold_position")
 ```
+The $\lambda$ is a penalty parameter that shrinks the coefficient to zero for Lasso and near zero for Ridge. This is the reason why, Lasso has a smaller model size compared to Ridge regression. Thus, Lasso with $\lambda=0.0298$ will have model size of $8$ and Ridge with $\lambda=0.0368$ will have model size of $30$ (unchanged). Looking at Table 1. we can see that `lambda.min` for both Lasso and Ridge regression have low AUC values compared to `lambda.1se`. This is because, the `lambda.min` values maximises the AUC values and minimises the error. Then, we compare the model accuracy among Lasso and Ridge. Lasso has the AUC value of $0.981$ and Ridge has $0.983$. From this, Ridge regression represents the training dataset better than Lasso. 
 
 \newpage
 
@@ -138,25 +141,28 @@ full.model <- glm(diagnosis~., data = train.breast, family = "binomial")
 null.model <- glm(diagnosis~1, data = train.breast, family = "binomial")
 
 #perform forward and backward stepwise selection
-model.B<- stepAIC(full.model, direction = "back", trace=FALSE)
-model.S<- stepAIC(null.model, scope = list(upper = full.model), 
-                  direction = "forward", trace=FALSE)
+model.B <- stepAIC(full.model, direction = "back", trace = FALSE)
+model.S <- stepAIC(null.model, scope = list(upper = full.model), 
+                  direction = "forward", trace = FALSE)
 ```
-
-The forward model takes a null model(which is a model without any feature) and only considers the intercept as a starting point and then progress towards the full model (with 30 features) by adding features. It can be seen here that the final model (forward) considers more features than the backward model. The forward model considers 15 features instead of 14 (in the backwards model)
 
 ```{r}
 #Computing standardised regression coefficients of each model
 B.coef <- lm.beta(model.B)$standardized.coefficients
-B.order<- order(abs(B.coef), decreasing = TRUE)
+B.order <- order(abs(B.coef), decreasing = TRUE)
 S.coef <- lm.beta(model.S)$standardized.coefficients
-S.order<- order(abs(S.coef), decreasing = TRUE)
+S.order <- order(abs(S.coef), decreasing = TRUE)
 
 #tabulating the model coefficients for backward and forward stepwise selection
 table <- list(B.coef[B.order], S.coef[S.order])
 kable(table, col.names = "Coefficients", caption = "Coefficients of Model B and Model S") %>% 
-  kable_styling(latex_options = "hold_position")
+  kable_styling(full_width = F, position = "center", latex_options = "hold_position")
 ```
+We perform a forward and backward stepwise selection here using `stepAIC()`. We will specify backward stepwise selection as Model B and forward stepwise selection as Model S. 
+
+The forward model starts from a null model and adds up the parameters towards the full model. On the other hand, barckward model starts from a full model with 30 parameters and removes. This process is controlled by the AIC value where the the algorithm will converge when the AIC value does not decrease any more. 
+
+Looking at Table 2 below. we can see that there are 14 features for Model B and 15 features for Model S. Although there is a difference in the number of feature used, we can detect the common features. This includes, `radius.worst`, `area.worst`, `perimeter`, `radius`, `radius.stderr`, `texture.worse`, `smoothness.worst`, `concavity.worst`. We can conclude that these features are indeed highly influential in detecting breast cancer.
 
 \newpage
 
@@ -181,6 +187,10 @@ pchisq(model.B$null.deviance - model.B$deviance, df = 12, lower.tail = FALSE)
 pchisq(model.S$null.deviance - model.S$deviance, df = 14, lower.tail = FALSE)
 ```
 
+To compare, the goodness of fit of Model B and Model S, we computed the AIC values for each model and conducted $\chi^2$-test.
+
+Model B has a AIC value of $99.5$ and Model S has a AIC value of $105.3$. Model B has a smaller AIC value thus a better model. To further validate this, we can also refer to the result from $\chi^2$-test. We obtained the p-value for each model where Model B has $1.46e-89$ and Model S has $1.35e-87$. Since Model B has a lower p-value, we can conclude that Model B is a better fit to the training dataset.
+
 \newpage
 
 ### Problem 1.e (2 points)
@@ -189,7 +199,7 @@ Compute the training AUC for model B and model S.
 
 ### Answer
 
-```{r , error=FALSE, warning=FALSE, message=FALSE, fig.height= 4}
+```{r , error=FALSE, warning=FALSE, message=FALSE, fig.height= 3.5}
 invisible({capture.output({
 model.B.auc <- roc(train.breast$diagnosis, model.B$fitted.values, plot = TRUE, 
     xlim = c(0,1), col = "red", main = "ROC Curves on Training Set")
@@ -202,8 +212,10 @@ dt <- data.table(c("Model B", "Model S"),
                     c(model.B.auc$auc, model.S.auc$auc))
 setnames(dt, c("Model", "Accuracy") )
 kable(dt, caption = "Training Accuracy of Model B and Model S") %>%
-  kable_styling(latex_options = "hold_position")
+  kable_styling(full_width = F, position = "center", latex_options = "hold_position")
 ```
+
+We computed the ROC curve using `roc()`, to compare the two models, Model B and Model S. Visually, we could not tell much difference. However, looking at Table 3, we can see that both models have high accuracy with the values of $0.9936$ and $0.9929$ respectively. Thus, like Q1 d), we can conclude that Model B is a better model.
 
 \newpage
 
@@ -213,10 +225,10 @@ Use the four models to predict the outcome for the observations in the test set 
 
 ### Answer
 
-```{r , error=FALSE, warning=FALSE, message=FALSE, fig.height=4}
+```{r , error=FALSE, warning=FALSE, message=FALSE, fig.height=3.7}
 #prediction of Lasso and Ridge Regression Model
-lasso.pred <- predict(fit.lasso, newx = as.matrix(test.breast[,-c(1,2)]), s = "lambda.1se")
-ridge.pred <- predict(fit.ridge, newx = as.matrix(test.breast[,-c(1,2)]), s = "lambda.1se")
+lasso.pred <- predict(fit.lasso, newx = as.matrix(test.breast[,-c(1,2)]), s="lambda.1se")
+ridge.pred <- predict(fit.ridge, newx = as.matrix(test.breast[,-c(1,2)]), s="lambda.1se")
 
 #prediction of Model B and Model S
 B.pred <- predict(model.B, newdata = test.breast, type = "response")
@@ -245,8 +257,10 @@ models <- c("Lasso Regression", "Ridge Regression", "Model B", "Model S")
 # We make a table and voila! 
 table <- data.table(models, train.auc, test.auc)
 kable(table, caption = "Training and Testing Acuraccy of each Model") %>%
-  kable_styling(latex_options = "hold_position")
+  kable_styling(full_width = F, position = "center", latex_options = "hold_position")
 ```
+
+We computed the ROC curve using the same method as Q1 e) but on testing data. From the plot, Lasso, Ridge, Model B and Model S are denoted in red, blue, green, orange respectively. We can clearly see the difference in the performance of each model. To scrutinise further, we look in Table 4 where we tabulated the accuracy on training and testing data for each model. All models obtained a high and similar accuracy. Therefore we can say that no model is neither overfitted nor underfitted. To pick the best model among the 4 models, we choose Model B as the best model. It has the highest accuracy on training data with the accuracy of $0.9936$. Although Lasso has the highest accuracy on testing data with $0.9809$, Model B also has a similar accuracy with $0.9803$.
 
 \newpage
 
@@ -267,7 +281,7 @@ gdm.dt <- data.table(fread("data_assignment2/GDM.raw.txt"))
 ```{r}
 #Performing Imputation using median
 for (colnm in colnames(gdm.dt,-1)){
-  gdm.dt[[colnm]][is.na(gdm.dt[[colnm]])] <- median(gdm.dt[[colnm]], na.rm = T)
+  gdm.dt[[colnm]][is.na(gdm.dt[[colnm]])] <- median(gdm.dt[[colnm]], na.rm = TRUE)
 }
 ```
 
